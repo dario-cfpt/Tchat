@@ -26,3 +26,20 @@ C:\Users\GENGAD_INFO\Desktop\Informatique 2017-2018\Atelier Application\Projet\T
 C:\Users\GENGAD_INFO\Desktop\Informatique 2017-2018\Atelier Application\Projet\Tchat\Tchat\obj\Debug\Tchat.RicherTextBox.ReplaceForm.resources
 C:\Users\GENGAD_INFO\Desktop\Informatique 2017-2018\Atelier Application\Projet\Tchat\Tchat\obj\Debug\Tchat.RicherTextBox.RicherTextBox.resources
 C:\Users\GENGAD_INFO\Desktop\Informatique 2017-2018\Atelier Application\Projet\Tchat\Tchat\obj\Debug\Tchat.FrmFriendInvitation.resources
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\bin\Debug\Tchat.exe.config
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\bin\Debug\Tchat.exe
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\bin\Debug\Tchat.pdb
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.csprojResolveAssemblyReference.cache
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.FrmFriendInvitation.resources
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.FrmHome.resources
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.FrmLogin.resources
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.FrmProfil.resources
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.FrmRegister.resources
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.Properties.Resources.resources
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.RicherTextBox.FindForm.resources
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.RicherTextBox.ReplaceForm.resources
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.RicherTextBox.RicherTextBox.resources
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.csproj.GenerateResource.Cache
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.csproj.CoreCompileInputs.cache
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.exe
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.pdb

@@ -1,5 +1,9 @@
-﻿using System;
-using System.Net;
+﻿/* Project name : ServerTchat
+ * Description : Chat server application console for the project "Tchat"
+ * Author : GENGA Dario
+ * Last update : 2017.11.30 (yyyy-MM-dd)
+ */
+using System;
 
 namespace ServerTchat
 {
@@ -7,12 +11,9 @@ namespace ServerTchat
     {
         static void Main(string[] args)
         {
+            // Start the server
             Server server = new Server();
-
-            server.Start(new IPEndPoint(IPAddress.Loopback, 3001));
             Console.ReadLine();
-            server.Stop();
-
         }
     }
 }
