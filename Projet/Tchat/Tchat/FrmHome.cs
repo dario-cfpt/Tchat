@@ -132,10 +132,10 @@ namespace Tchat
 
 
             // TODO : connexion avec le serveur
-            IPAddress address = IPAddress.Parse("127.0.0.1");
+            //IPAddress address = IPAddress.Parse("10.134.98.135");
 
-            ClientTchat client = new ClientTchat(address, 3001);
-
+            //ClientTchat client = new ClientTchat(address, 3001);
+            ClientTchat client = new ClientTchat();
         }
 
 
@@ -166,6 +166,7 @@ namespace Tchat
             _frmLogin.Show();
         }
         #endregion FrmHomeEvents
+
         #region UserStatus
         /// <summary>
         /// Affiche/Masque le panel qui contient les boutons qui permettent de changer notre statut
@@ -211,6 +212,7 @@ namespace Tchat
             _requestsSQL.UpdateStatutUser(statut, _frmLogin.Username);
         }
         #endregion UserStatus
+
         #region InitControls
         /// <summary>
         /// Initialise les PictureBox qui contiennent les images de l'avatar et du fond de l'utilisateur
@@ -272,6 +274,7 @@ namespace Tchat
             
         }
         #endregion InitControls
+
         #region EditManagement
         #region MethodsEdit 
         /// <summary>
@@ -667,6 +670,7 @@ namespace Tchat
         }
         #endregion StateEdit
         #endregion EditManagement
+
         #region ControlsEvents
         #region TextboxPlaceholder
 

@@ -2,7 +2,7 @@
  * Description : Chat online in Windows Form C#. Users can chat privately or they can chat in groups in "rooms"
  * Class : RequestsSql - Contains all queries SQL of the app
  * Author : GENGA Dario
- * Last update : 2017.16.22 (yyyy-MM-dd)
+ * Last update : 2017.11.16 (yyyy-MM-dd)
  */
 
 using System;
