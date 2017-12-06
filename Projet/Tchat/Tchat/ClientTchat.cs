@@ -14,7 +14,7 @@ namespace Tchat
     class ClientTchat
     {
         private ManualResetEvent _eventConnect;
-        private const string SERVER_HOSTNAME = "CFPI-R113PC01";
+        private const string SERVER_HOSTNAME = "CFPI-R107PC42";
         private const int PORT = 3001;
 
         public ClientTchat()
@@ -22,6 +22,8 @@ namespace Tchat
             _eventConnect = new ManualResetEvent(false);
             Start();
         }
+
+
 
         private void Start()
         {
