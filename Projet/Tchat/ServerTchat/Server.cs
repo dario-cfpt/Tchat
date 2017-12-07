@@ -8,6 +8,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 
 namespace ServerTchat
@@ -87,10 +88,31 @@ namespace ServerTchat
             Socket listener = (Socket)ar.AsyncState;
             Socket handler = listener.EndAccept(ar);
 
-            // TODO : commencer à traiter les données
+            // Create the state object.  
+            StateObject state = new StateObject { WorkSocket = handler };
+            handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, 0, new AsyncCallback(ReadCallback), state);
         }
 
+        public void ReadCallback(IAsyncResult ar)
+        {
+            string content = String.Empty;
+            // Retrieve the state object and the handler socket  
+            // from the asynchronous state object.  
+            StateObject state = (StateObject)ar.AsyncState;
+            Socket handler = state.WorkSocket;
 
+            // Read data from the client socket.   
+            int bytesRead = handler.EndReceive(ar);
+
+            if (bytesRead > 0)
+            {
+                state.Sb.Append(Encoding.ASCII.GetString(state.Buffer, 0, bytesRead));
+
+                content = state.Sb.ToString();
+                Console.WriteLine(content);
+            }
+            
+        }
 
     }
 }
