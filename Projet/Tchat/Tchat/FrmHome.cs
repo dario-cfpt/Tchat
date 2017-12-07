@@ -20,7 +20,6 @@ namespace Tchat
         private FrmLogin _frmLogin;
         private DatabaseConnection _dbConnect = new DatabaseConnection(FrmLogin.SERVER, FrmLogin.DATABASE, FrmLogin.USER, FrmLogin.PASSWORD);
         private RequestsSQL _requestsSQL;
-        ClientTchat _client;
         private Control _btnNewHobbies; // Contiendra le bouton d'ajout de nouvel hobby
 
         // On stocke l'image de l'avatar et du backjground pour pouvoir la remettre en cas d'annulation sans refaire de requête
@@ -136,7 +135,6 @@ namespace Tchat
             //IPAddress address = IPAddress.Parse("10.134.98.135");
 
             //_client = new ClientTchat(address, 3001);
-            _client = new ClientTchat();
         }
 
 

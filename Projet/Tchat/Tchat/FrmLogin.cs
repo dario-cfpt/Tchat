@@ -57,6 +57,8 @@ namespace Tchat
             DatabaseConnection dbConnect = new DatabaseConnection(SERVER, DATABASE, USER, PASSWORD);
             RequestsSQL requests = new RequestsSQL(dbConnect.Connection);
 
+            ClientTchat client = new ClientTchat(username, password);
+
             if (requests.Login(username, password))
             {
                 MessageBox.Show("Bonjour " + username + " !", "Connexion réussi !");
