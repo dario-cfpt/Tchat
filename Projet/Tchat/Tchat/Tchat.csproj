@@ -48,6 +48,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ClientRequest.cs" />
     <Compile Include="ClientTchat.cs" />
     <Compile Include="DatabaseConnection.cs" />
     <Compile Include="FrmFriendInvitation.cs">

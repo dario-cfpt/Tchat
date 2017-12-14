@@ -8,10 +8,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-<<<<<<< HEAD
 using System.Runtime.Serialization.Formatters.Binary;
-=======
->>>>>>> f6cedd8d5f5bd9a4b353cd9d75a96269024a19ea
 using System.Text;
 using System.Threading;
 
@@ -128,7 +125,6 @@ namespace ServerTchat
             Socket handler = listener.EndAccept(ar);
 
             // Create the state object.  
-<<<<<<< HEAD
             StateObject state = new StateObject();
             state.WorkSocket = handler;
 
@@ -144,21 +140,11 @@ namespace ServerTchat
         /// <param name="ar">The state object who containt the data sended by the user</param>
         public void ReadCallback(IAsyncResult ar)
         {
-=======
-            StateObject state = new StateObject { WorkSocket = handler };
-            handler.BeginReceive(state.Buffer, 0, StateObject.BUFFER_SIZE, 0, new AsyncCallback(ReadCallback), state);
-        }
-
-        public void ReadCallback(IAsyncResult ar)
-        {
-            string content = String.Empty;
->>>>>>> f6cedd8d5f5bd9a4b353cd9d75a96269024a19ea
             // Retrieve the state object and the handler socket  
             // from the asynchronous state object.  
             StateObject state = (StateObject)ar.AsyncState;
             Socket handler = state.WorkSocket;
 
-<<<<<<< HEAD
             try
             {
                 // Deserialize the buffer receive into a jagged byte array (byte[][])
@@ -198,19 +184,6 @@ namespace ServerTchat
                 Console.WriteLine(ex);
             }
 
-=======
-            // Read data from the client socket.   
-            int bytesRead = handler.EndReceive(ar);
-
-            if (bytesRead > 0)
-            {
-                state.Sb.Append(Encoding.ASCII.GetString(state.Buffer, 0, bytesRead));
-
-                content = state.Sb.ToString();
-                Console.WriteLine(content);
-            }
-            
->>>>>>> f6cedd8d5f5bd9a4b353cd9d75a96269024a19ea
         }
 
     }
