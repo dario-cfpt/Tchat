@@ -5,6 +5,7 @@
  * Last update : 2017.12.14 (yyyy-MM-dd)
  */
 using System;
+using System.Drawing;
 using System.IO;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -61,8 +62,8 @@ namespace Tchat
             byte[][] jaggedCommand = { Encoding.UTF8.GetBytes(command), ConvertJaggedByteToByteArray(jaggedData) };
 
             // Serialize the jagged command into a byte array and send it
-            byte[] data = ConvertJaggedByteToByteArray(jaggedCommand);
-            Client.Send(data);
+            byte[] buffer = ConvertJaggedByteToByteArray(jaggedCommand);
+            Client.Send(buffer);
         }
 
         /// <summary>
@@ -112,7 +113,7 @@ namespace Tchat
         /// <returns>Return the response of the server</returns>
         public bool SendNewAccount(string username, string password, string email, string phone)
         {
-            // Create an jagged byte array who contain the data for the new account
+            // Create a jagged byte array who contain the data for the new account
             byte[][] account = {
                 Encoding.UTF8.GetBytes(username),
                 Encoding.UTF8.GetBytes(password),
@@ -126,6 +127,39 @@ namespace Tchat
             // Recup the response of the server and return it
             bool created = GetBooleanResult();
             return created;
+        }
+
+        /// <summary>
+        /// Send a username and get the id of avatar and backgroud images
+        /// </summary>
+        /// <param name="username">The name of the user</param>
+        /// <returns>Return an array of string who contain the id of the avatar image (first index) and the id of the background image (second index)</returns>
+        public string[] SendUsernameToGetUserImagesId(string username)
+        {
+            // Create a jagged byte array who contain the username (we have to create a jaggend even if there is only one element)
+            byte[][] user = { Encoding.UTF8.GetBytes(username) };
+
+            // Serialize the command and username and send it
+            SerializeAndSendBuffer("/GetUserImagesId", user);
+
+            // Receive the buffer by the server (but we have to deserialize it)
+            byte[] buffer = new byte[1024];
+            Client.Receive(buffer);
+
+            // We deserialize the buffer into a jagged byte array
+            MemoryStream ms = new MemoryStream(buffer);
+            BinaryFormatter bf = new BinaryFormatter();
+            byte[][] result = (byte[][])bf.Deserialize(ms);
+
+            // We recup the id stored in the jagged array and we return it
+            string[] arrayImg = { Encoding.UTF8.GetString(result[0]), Encoding.UTF8.GetString(result[1]) };
+            return arrayImg;
+
+        }
+
+        public Image SendImageId(string idImage)
+        {
+            byte[][] id = { Encoding.UTF8.GetBytes(idImage) };
         }
         #endregion SendingData
     }
