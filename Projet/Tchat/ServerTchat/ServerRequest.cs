@@ -5,7 +5,9 @@
  * Last update : 2017.12.14 (yyyy-MM-dd)
  */
 using System;
+using System.IO;
 using System.Net.Sockets;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 
 namespace ServerTchat
@@ -27,6 +29,22 @@ namespace ServerTchat
         }
 
         private RequestsSQL RequestsSQL { get => _requestsSQL; set => _requestsSQL = value; }
+
+        /// <summary>
+        /// Serialize a jagged byte array (byte[][]) into a byte array (byte[]) and send it
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns>Return the serialized jagged byte array</returns>
+        private byte[] ConvertJaggedByteToByteArray(byte[][] data)
+        {
+            // Serialize the connection data to get a byte array
+            MemoryStream ms = new MemoryStream();
+            BinaryFormatter bf = new BinaryFormatter();
+            bf.Serialize(ms, data);
+            byte[] byteData = ms.ToArray();
+
+            return byteData;
+        }
 
         /// <summary>
         /// Try to connect the user to the database
@@ -70,6 +88,27 @@ namespace ServerTchat
             byte[] result = BitConverter.GetBytes(created);
             handler.Send(result);
 
+        }
+
+        /// <summary>
+        /// Recovers the images id of the avatar and backgroud images by an username
+        /// </summary>
+        /// <param name="handler">The socket of the user</param>
+        /// <param name="data">Jagged byte array who contain the username</param>
+        public void CommandGetUserImagesIdByUsername(Socket handler, byte[][] data)
+        {
+            // Recovers the username
+            string username = Encoding.UTF8.GetString(data[0]);
+
+            // Recovers the result of the request into a string array
+            string[] arrayImg = RequestsSQL.GetUserImagesIdByUsername(username);
+
+            // Create a jagged byte array of the result
+            byte[][] jaggedResult = { Encoding.UTF8.GetBytes(arrayImg[0]), Encoding.UTF8.GetBytes(arrayImg[1]) };
+
+            // Convert the result into a byte array and send it to the client (who will have to deserialize it)
+            byte[] result = ConvertJaggedByteToByteArray(jaggedResult);
+            handler.Send(result);
         }
     }
 }

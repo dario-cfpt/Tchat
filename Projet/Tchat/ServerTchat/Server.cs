@@ -150,12 +150,12 @@ namespace ServerTchat
                 // Deserialize the buffer receive into a jagged byte array (byte[][])
                 // The first element of the array is the command that will be executed later
                 // The second element of the array is the data needed for this command (the data has to be a jagged byte array too !)
-                MemoryStream ms = new MemoryStream(state.Buffer, 0, state.Buffer.Length);
+                MemoryStream ms = new MemoryStream(state.Buffer);
                 BinaryFormatter bf = new BinaryFormatter();
                 byte[][] bufferReceive = (byte[][])bf.Deserialize(ms);
 
                 // Deserialize the data of the array into another jagged byte array (byte[][])
-                ms = new MemoryStream(bufferReceive[1], 0, bufferReceive[1].Length);
+                ms = new MemoryStream(bufferReceive[1]);
                 bf = new BinaryFormatter();
                 byte[][] dataReceive = (byte[][])bf.Deserialize(ms);
 
@@ -169,8 +169,12 @@ namespace ServerTchat
                     case "/createAccount":
                         SvRequest.CommandCreateAccount(handler, dataReceive);
                         break;
+                    case "/GetUserImagesId":
+                        SvRequest.CommandGetUserImagesIdByUsername(handler, dataReceive);
+                        break;
                     default:
                         Console.WriteLine("Unknown command");
+                        handler.Send(new byte[0]);
                         break;
                 }
 
@@ -180,7 +184,7 @@ namespace ServerTchat
             }
             catch (Exception ex)
             {
-                handler.Close();
+                state.WorkSocket.Close();
                 Console.WriteLine(ex);
             }
 
