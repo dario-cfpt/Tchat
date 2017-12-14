@@ -10,10 +10,12 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.Collections.Generic;
 using System.Drawing.Imaging;
-//using Rtb = RicherTextBox.RicherTextBox; // https://www.codeproject.com/Articles/24443/RicherTextBox
 
 namespace Tchat
 {
+    /// <summary>
+    /// This is the main form of the application when the user is connected.
+    /// </summary>
     public partial class FrmHome : Form
     {
         private FrmLogin _frmLogin;
@@ -32,7 +34,6 @@ namespace Tchat
         private bool _avatarHasChange = false; // Si cette variable est à true, alors on doit modifier l'avatar de l'utilisateur
         private bool _backgroundHasChange = false; // Si cette variable est à true, alors on doit modifier le background de l'utilisateur
         private bool _rePaint = false; // Indique si on déclanche l'event Paint manuellement
-        //private Rtb _rtb = new Rtb();
 
         public const string EDIT_TAG = "edit"; // Le tag des composants (dynamiques) de l'édition
         public const string COLUMN_AVATAR = "AVATAR_ID";
@@ -53,6 +54,7 @@ namespace Tchat
         private bool RePaint { get => _rePaint; set => _rePaint = value; }
 
 
+
         /// <summary>
         /// Constructeur qui permettra de stocker la page de login afin d'y retourner lorsqu'on fermera la page d'accueil
         /// </summary>
@@ -70,89 +72,82 @@ namespace Tchat
         #region FrmHomeEvents
         /// <summary>
         /// Initialise les différents composants de l'interface
+        /// Initialize the differents components of the interface
         /// </summary>
         private void FrmHome_Load(object sender, EventArgs e)
         {
-            // Initialise la date et l'heure
+            // Initialize the date and hour
             DateTime dt = new DateTime();
             dt = DateTime.Now;
             tsDate.Text = dt.ToString("dddd d MMMM yyyy - HH:mm");
-
-            // On arrondit les boutons de l'interface
+            
+            // Round control of the interface
             Design.RoundControl(btnStatutAvatar, 2, 2, btnStatutAvatar.Width - 5, btnStatutAvatar.Height - 5);
             foreach (Control control in pnlStatus.Controls)
             {
-                // Si le contrôle qu'on est en train de parcourir dans notre panel est un boutton, alors on l'arrondit
-                // On ne veut pas arrondir les labels présent dans le panel
+                // We only round button
                 if (control.GetType() == typeof(Button))
                 {
                     Design.RoundControl(control, 2, 2, btnStatutAvatar.Width - 5, btnStatutAvatar.Height - 5);
                 }
             }
-            // Initialisation des images des différents onglets
-            string[] arrayImg = FrmLog.Client.CallSendUsernameToGetUserImagesId(FrmLog.Username);
-            //string[] arrayImg = _requestsSQL.GetUserImagesIdByUsername(FrmLog.Username);
+            // Initialize the images of the differents tabs
+            string[] arrayImg = FrmLog.Client.GetUserImagesIdByUsername(FrmLog.Username);
             string idAvatar = arrayImg[0];
             string idBackground = arrayImg[1];
             Image imgAvatar = null;
             Image imgBackground = null;
-            // On affiche les images de profil et de fond
+            
+            // Show avatar and background images
             if (idAvatar != null)
             {
-                imgAvatar = _requestsSQL.CreateImageById(idAvatar); // Récupère l'avatar de l'utilisateur
+                imgAvatar = FrmLog.Client.GetImageById(idAvatar);
             }
             if (idBackground != null)
             {
-                imgBackground = _requestsSQL.CreateImageById(idBackground); // Récupère le background de l'utilisateur
+                imgBackground = FrmLog.Client.GetImageById(idBackground);
             }
 
             InitPictureBox(pbxAvatar, imgAvatar, pbxBackground, imgBackground);
             
-            // Initialisation du profil de l'utilisateur
-            Dictionary<string, string> profil = _requestsSQL.GetProfilByUsername(FrmLog.Username); // Récupère les informations du profil de l'utilisateur
+            // Initialize the profil of the user
+            Dictionary<string, string> profil = FrmLog.Client.GetProfilByUsername(FrmLog.Username);// Recovers the profil of the user
             InitProfil(pbxAvatar2, imgAvatar, pbxBackground2, imgBackground, lblUsername, FrmLog.Username, rtbDescription, profil["description"], tbxEmail, profil["email"], tbxPhone, profil["phone"], dgvHobbies, profil["hobbies"]);
 
             lblHome.Text = "Bienvenue " + FrmLog.Username + " !";
-            // Gestion de la transparence des composants
+            // Management of the transparency of components
             lblHome.Parent = pbxBackground;
             lnkEditProfil.Parent = pbxBackground;
             lnkEditProfil2.Parent = pbxBackground2;
             lblUsername.Parent = pbxBackground2;
             
-            // Gestions d'événements & Placeholder
+            // Management of events & Placeholder
             tbxNewHobbie.LostFocus += TbxNewHobbie_LostFocus;
             Placeholder phNewHobby = new Placeholder(tbxNewHobbie, PLACEHOLDER_HOBBIES);
             Placeholder phSearchFriends = new Placeholder(tbxSearchFriend, PLACEHOLDER_SEARCH_FRIENDS);
             Placeholder phSearchFriends2 = new Placeholder(tbxSearchFriend2, PLACEHOLDER_SEARCH_FRIENDS);
             Placeholder phSearchRooms = new Placeholder(tbxSearchRoom, PLACEHOLDER_SEARCH_ROOMS);
-
-            // Gestion de la liste d'ami
-            FriendsList = _requestsSQL.GetFriendsList(_requestsSQL.GetUserIdByUsername(FrmLog.Username));
+            
+            // Management of the friends list
+            FriendsList = FrmLog.Client.GetFriendsListByUserId(FrmLog.Client.GetUserIdByUsername(FrmLog.Username));
             // REMARK : Création de la liste d'ami non satisfaisante (faut-il revoir l'interface ?)
             foreach (string[] friend in FriendsList)
             {
-                Image friendAvatar = _requestsSQL.GetFriendAvatarByFriendId(friend[0]); // On récupère l'avatar de notre ami
-
-                // Création d'une ligne et remplissage des données
+                Image friendAvatar = FrmLog.Client.GetFriendAvatarById(friend[0]); // Recovers the avatar of our friend
+                // Creation of a row and data filling
                 DataGridViewRow row = new DataGridViewRow();
-                row.CreateCells(dgvFriendsList); // Ne pas oublié de créé les cellules
-                row.Cells[0].Value = friendAvatar; // Ajout de l'image
-                row.Cells[1].Value = _requestsSQL.GetUsernameById(friend[0]); // Ajout du nom de l'ami
-                row.Cells[2].Value = friend[1]; // Ajout du message
+                row.CreateCells(dgvFriendsList); // Don't forget to create cells !
+                row.Cells[0].Value = friendAvatar; // Add the image
+                row.Cells[1].Value = FrmLog.Client.GetUsernameByUserId(friend[0]); // Add the name of our friend
+                row.Cells[2].Value = friend[1]; // Add the message
 
-                dgvFriendsList.Rows.Add(row); // On ajoute la ligne
+                dgvFriendsList.Rows.Add(row); // Add the row completed
             }
-
-
-            // TODO : connexion avec le serveur
-            //IPAddress address = IPAddress.Parse("10.134.98.135");
-
-            //_client = new ClientTchat(address, 3001);
         }
 
 
         /// <summary>
-        /// Demande à l'utilisateur s'il est veut réellement fermer la fenêtre (ainsi que se déconnecter)
+        /// Ask the user if he really want to close the windows (and to disconnect)
         /// </summary>
         private void FrmHome_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -162,16 +157,16 @@ namespace Tchat
 
             if (dr == DialogResult.OK)
             {
-                _requestsSQL.UpdateStatutUser(RequestsSQL.OFFLINE, FrmLog.Username); // Déconnexion de l'utilisateur
+                FrmLog.Client.UpdateStatutOfUser(FrmLogin.OFFLINE, FrmLog.Username); // Disconnect the user
             }
             else
             {
-                e.Cancel = true; // Annule la fermeture de la fenêtre
+                e.Cancel = true; // Cancel the closure
             }
         }
 
         /// <summary>
-        /// Réafiche la page de login lorsqu'on ferme la page d'accueil
+        /// Redisplay the windows of login when we close the home windows
         /// </summary>
         private void FrmHome_FormClosed(object sender, FormClosedEventArgs e)
         {
@@ -181,89 +176,92 @@ namespace Tchat
 
         #region UserStatus
         /// <summary>
-        /// Affiche/Masque le panel qui contient les boutons qui permettent de changer notre statut
+        /// Show/Hide the panel who contain the buttons which can to change our statut
         /// </summary>
         private void btnStatutAvatar_Click(object sender, EventArgs e)
         {
             pnlStatus.Visible = !pnlStatus.Visible;
         }
+
         /// <summary>
-        /// Change le statut de l'utilisateur selon le bouton cliqué
+        /// Change the statut of the user when a button is clicked
         /// </summary>
         private void btnOnline_Click(object sender, EventArgs e)
         {
             pnlStatus.Visible = false;
             string statut = "";
 
-            Button btn = (Button)sender; // Récupère le bouton qui vient de cliquer
-            // Regarde quel est le bouton qui vient d'être cliquer selon sa propriété Name afin de connaître le (nouveau) statut
-            // On récupère donc le statut correspondant au bouton et on change la couleur du bouton de statut de l'avatar
+            Button btn = (Button)sender;
+            
+            // Look at the property of the clicked button to know the (new) statut
+            // Then we recovers it and change the statut button color of the avatar
             switch (btn.Name)
             {
                 case "btnOnline":
-                    statut = RequestsSQL.ONLINE;
+                    statut = FrmLogin.ONLINE;
                     btnStatutAvatar.BackColor = Color.YellowGreen;
                     break;
                 case "btnAbsent":
-                    statut = RequestsSQL.ABSENT;
+                    statut = FrmLogin.ABSENT;
                     btnStatutAvatar.BackColor = Color.Orange;
                     break;
                 case "btnDoNotDisturb":
-                    statut = RequestsSQL.DO_NOT_DISTURB;
+                    statut = FrmLogin.DO_NOT_DISTURB;
                     btnStatutAvatar.BackColor = Color.Red;
                     break;
                 case "btnInvisible":
-                    statut = RequestsSQL.INVISIBLE;
+                    statut = FrmLogin.INVISIBLE;
                     btnStatutAvatar.BackColor = Color.Gray;
                     break;
                 default:
                     Console.WriteLine("La propriété Name du bouton qui vient de cliquer est inconnue !");
                     break;
             }
-            // Met à jour le statut
-            _requestsSQL.UpdateStatutUser(statut, FrmLog.Username);
+            // Update the statut
+            FrmLog.Client.UpdateStatutOfUser(statut, FrmLog.Username);
         }
         #endregion UserStatus
 
         #region InitControls
         /// <summary>
-        /// Initialise les PictureBox qui contiennent les images de l'avatar et du fond de l'utilisateur
+        /// Initialize the PictureBox who contains the avatar and background images of the user
         /// </summary>
-        /// <param name="avatar">Le PictureBox qui contiendra l'avatar</param>
-        /// <param name="imgAvatar">L'image de l'avatar</param>
-        /// <param name="background">Le PictureBox qui contiendra le fond</param>
-        /// <param name="imgBackground">L'image de fond</param>
+        /// <param name="avatar">The PictureBox who will contain the avatar</param>
+        /// <param name="imgAvatar">The avatar image</param>
+        /// <param name="background">The PictureBox who will contain the background</param>
+        /// <param name="imgBackground">The background image</param>
         private void InitPictureBox(PictureBox avatar, Image imgAvatar, PictureBox background, Image imgBackground)
         {
-            // On arrondit le PictureBox l'avatar
+            // Round the picturebox of the avatar
             Design.RoundControl(avatar, 0, 0, avatar.Width - 3, avatar.Height - 3);
-
-            // On affiche les images de profil et de fond
+            
+            // Show the images
             avatar.Image = imgAvatar;
             background.Image = imgBackground;
 
-            // On stocke les images
+            // Save the images
             ImgAvatar = imgAvatar;
             ImgBackground = imgBackground;
         }
 
         /// <summary>
         /// Initialise les données du profil d'utilisateur
+        /// Initialize the data of the profil of the user
         /// </summary>
-        /// <param name="avatar">Le PictureBox qui contiendra l'avatar</param>
-        /// <param name="imgAvatar">L'image de l'avatar</param>
-        /// <param name="background">Le PictureBox qui contiendra le fond</param>
-        /// <param name="imgBackground">L'image de fond</param>
-        /// <param name="user">Le Label qui contiendra le pseudo</param>
-        /// <param name="username">Le pseudo</param>
-        /// <param name="description">Le RichTextBox qui contiendra la description de profil</param>
-        /// <param name="userDescription">La description de profil</param>
-        /// <param name="email">Le TextBox qui contiendra l'email</param>
-        /// <param name="userEmail">L'email</param>
-        /// <param name="phone">Le TextBox qui contiendra le téléphone</param>
-        /// <param name="userPhone">Le téléphone</param>
-        /// <param name="hobbies">Le DataGridView qui contiendra les centres d'intérêts</param>
-        /// <param name="userHobbies">Les centres d'intérêts de l'utilisateur, ils doivent être séparé par des points virgules (;)</param>
+        /// <param name="avatar">The PictureBox who will contain the avatar</param>
+        /// <param name="imgAvatar">The avatar image</param>
+        /// <param name="background">The PictureBox who will contain the background</param>
+        /// <param name="imgBackground">The background image</param>
+        /// <param name="user">The Label who contain the username</param>
+        /// <param name="username">The username</param>
+        /// <param name="description">The RichTextBox who contain the description of the profil</param>
+        /// <param name="userDescription">The description of the profil</param>
+        /// <param name="email">The Textbox who contain the email</param>
+        /// <param name="userEmail">The email</param>
+        /// <param name="phone">The Textbox who contain the phone</param>
+        /// <param name="userPhone">The phone</param>
+        /// <param name="hobbies">The DataGridView who will contain the centers of interest of the user</param>
+        /// <param name="userHobbies">The centers of interest of the user, separated by semicolons (;)</param>
         private void InitProfil(PictureBox avatar, Image imgAvatar,
                                 PictureBox background, Image imgBackground,
                                 Label user, string username,
@@ -272,16 +270,16 @@ namespace Tchat
                                 TextBox phone, string userPhone,
                                 DataGridView hobbies, string userHobbies)
         {
-            // Initialisation des PictureBox
+            // Initialize the PictureBox
             InitPictureBox(avatar, imgAvatar, background, imgBackground);
-
-            // Initialisation des différents composants
+            
+            // Initialize the differents components
             user.Text = username;
             description.Text = userDescription;
             email.Text = userEmail;
             phone.Text = userPhone;
-
-            // Initialisation de la liste des centres d'intérêt
+            
+            // Initialize the centers of interest
             UpdateHobbies(hobbies, userHobbies);
             
         }
@@ -290,12 +288,12 @@ namespace Tchat
         #region EditManagement
         #region MethodsEdit 
         /// <summary>
-        /// Active ou désactive le mode d'édition du profil
+        /// (Des)Enabled the edition mode of the profil
         /// </summary>
-        /// <param name="inEdit">Si true alors on active l'édition, sinon on la désactive</param>
+        /// <param name="inEdit">If true the mode is enabled, else he is disabled</param>
         private void EditMode(bool inEdit)
-        {
-            // Gestion de la visibilité des champs non-dynamique
+        {// TODO : je me suis arrêter par ici
+            // Management of the visibility of the non dynamic fields
             #region ControlsVisibility
             lblPwd.Visible = !lblPwd.Visible;
             tbxPwd.Visible = !tbxPwd.Visible;
@@ -309,56 +307,54 @@ namespace Tchat
             rtbDescription.ReadOnly = !rtbDescription.ReadOnly;
             #endregion ControlsVisibility
 
-            if (inEdit) // Mode edition on
+            if (inEdit) // Edition mode ON
             {
-                // On gère la visibilité des liens avec des valeures fixe pour éviter un bug
-                // il y avait une chance que les liens restaient visible à cause de l'ajout/du retrait d'onglet
+                // On gère la visibilité des liens avec des valeures fixe pour éviter un bug when we added/removed a tab
                 lnkEditProfil.Visible = false; 
                 lnkEditProfil2.Visible = false;
-
-                // On retire les pages d'onglet qui ne correspondent pas à celle du profil
+                
+                // We remove the tabs that do not match the profil tab
                 tcWindows.TabPages.Remove(tpHome);
                 tcWindows.TabPages.Remove(tpFriends);
                 tcWindows.TabPages.Remove(tpRooms);
                 tcWindows.TabPages.Remove(tpSettings);
-
-                // On récupère le mot de passe de l'utilisateur et on l'affiche dans le textbox
+                
+                // Recovers the password of the user and show it on the textbox
                 tbxPwd.Text = _requestsSQL.GetUserPasswordByUsername(FrmLog.Username);
-
-                // On ajoute des boutons qui permettront d'éditer les différentes informations de l'utilisateur
+                
+                // We add buttons that allow to edit the differents informations of the user
                 Design.AddEditButtonForControl(tbxPwd, gbxInformation, "BtnPwd", "Wingdings", "!", BtnPwd_Click, EDIT_TAG);
                 BtnNewHobbies = Design.AddEditButtonForControl(tbxNewHobbie, gbxInformation, "BtnNewHobbie", "Wingdings 2", "Ì", BtnNewHobbie_Click, EDIT_TAG);
                 BtnNewHobbies.Enabled = false;
 
                 // On ajoute la colonne des boutons
+                // We add the button column
                 if (!dgvHobbies.Columns.Contains("ColumnButton"))
                     dgvHobbies.Columns.Add(ColumnButton);
 
                 // TODO : Bordure en traitillé pour l'avatar
                 //_rePaint = true;
                 //pbxAvatar2.Refresh();
-
-                // Ajout d'une bordure et changement du curseur sur les picturebox
-                // pour indiqué que l'on peut changer l'image en cliquant dessus
+                
+                // We add a bordure and we change the cursor of the PictureBox for indicate that the image can be changed
                 RePaint = true;
                 pbxBackground2.Refresh();
                 pbxAvatar2.Cursor = Cursors.Hand;
                 pbxBackground2.Cursor = Cursors.Hand;
 
             }
-            else // Mode edition off
+            else // Edition mode OFF
             {
-                // On gère la visibilité des liens avec des valeures fixe pour éviter un bug
-                // il y avait une chance que les liens restaient visible à cause de l'ajout/du retrait d'onglet
+                // On gère la visibilité des liens avec des valeures fixe pour éviter un bug when we added/removed a tab
                 lnkEditProfil.Visible = true;
                 lnkEditProfil2.Visible = true;
 
-                // Gestion des onglets
+                // Management of tabs
                 #region TabPages
-                // Ajoute les pages d'onglet de l'application
+                // Add the tabs of the application
                 tcWindows.TabPages.Add(tpHome);
-                // on doit retirer l'onglet du profil puis le rajouter pour avoir les onglets dans le bonne ordre 
-                // mais on ne doit pas le retirer si il s'agit du dernier onglet présent, il faut d'abord en ajouter un autre
+                // we must remove the tab of the profile then add it to have the tabs in the right order
+                // but we should not remove it if it is the last tab present, we must first add another
                 tcWindows.TabPages.Remove(tpProfil);
                 tcWindows.TabPages.Add(tpProfil);
                 tcWindows.TabPages.Add(tpFriends);

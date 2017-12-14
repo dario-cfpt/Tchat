@@ -48,7 +48,7 @@ namespace Tchat
             string phone = tbxPhone.Text;
             
             // We send the data to the server for creation a new account and recup the result of the creation
-            bool created = _client.CallSendNewAccount(Username, Password, email, phone);
+            bool created = _client.CreateNewAccount(Username, Password, email, phone);
 
             if (created)
             {

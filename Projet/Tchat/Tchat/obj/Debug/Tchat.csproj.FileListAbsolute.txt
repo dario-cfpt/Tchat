@@ -36,9 +36,6 @@ C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.F
 C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.FrmProfil.resources
 C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.FrmRegister.resources
 C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.Properties.Resources.resources
-C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.RicherTextBox.FindForm.resources
-C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.RicherTextBox.ReplaceForm.resources
-C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.RicherTextBox.RicherTextBox.resources
 C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.csproj.GenerateResource.Cache
 C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.csproj.CoreCompileInputs.cache
 C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.exe
