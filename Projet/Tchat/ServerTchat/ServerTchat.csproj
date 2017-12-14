@@ -52,10 +52,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RequestsSQL.cs" />
     <Compile Include="Server.cs" />
-<<<<<<< HEAD
     <Compile Include="ServerRequest.cs" />
-=======
->>>>>>> f6cedd8d5f5bd9a4b353cd9d75a96269024a19ea
     <Compile Include="StateObject.cs" />
   </ItemGroup>
   <ItemGroup>
