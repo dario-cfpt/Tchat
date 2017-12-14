@@ -5,6 +5,7 @@
  * Last update : 2017.12.14 (yyyy-MM-dd)
  */
 using System;
+using System.Drawing;
 using System.Net;
 using System.Net.Sockets;
 
@@ -34,11 +35,6 @@ namespace Tchat
         }
 
         /// <summary>
-        /// Indicate if the user is connected to the database (true = connected, false = not connected)
-        /// </summary>
-        public bool Logged { get => _logged; set => _logged = value; }
-
-        /// <summary>
         /// The socket of the client
         /// </summary>
         private Socket Client { get => _client; set => _client = value; }
@@ -54,6 +50,10 @@ namespace Tchat
         /// </summary>
         private bool Connected { get => _connected; set => _connected = value; }
 
+        /// <summary>
+        /// Indicate if the user is connected to the database (true = connected, false = not connected)
+        /// </summary>
+        public bool Logged { get => _logged; set => _logged = value; }
 
         /// <summary>
         /// Recup the IP Address of the server by his hostname
@@ -123,6 +123,7 @@ namespace Tchat
         /// <param name="password">The password of the user</param>
         /// <param name="email">The email of the user</param>
         /// <param name="phone">The phone of the user</param>
+        /// <returns>Return true if the account was correctly created, if not return false</returns>
         public bool CallSendNewAccount(string username, string password, string email, string phone)
         {
             if (Connected)
@@ -136,6 +137,35 @@ namespace Tchat
             }
         }
 
+        /// <summary>
+        /// Call the method who will recup a username and get the id of avatar and backgroud images
+        /// </summary>
+        /// <param name="username">The name of the user</param>
+        /// <returns>Return an array of string who contain the id of the avatar image (first index) and the id of the background image (second index)</returns>
+        public string[] CallSendUsernameToGetUserImagesId(string username)
+        {
+            if (Connected)
+            {
+                return ClRequest.SendUsernameToGetUserImagesId(username);
+            }
+            else
+            {
+                Console.WriteLine("The socket must be connected to the server !");
+                return null;
+            }
+        }
 
+        public Image CallSendIdImage(string id)
+        {
+            if (Connected)
+            {
+                return ClRequest.SendImageId(id);
+            }
+            else
+            {
+                Console.WriteLine("The socket must be connected to the server !");
+                return null;
+            }
+        }
     }
 }

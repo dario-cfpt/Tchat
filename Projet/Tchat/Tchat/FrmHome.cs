@@ -41,6 +41,17 @@ namespace Tchat
         public const string PLACEHOLDER_SEARCH_FRIENDS = "Rechercher un ami...";
         public const string PLACEHOLDER_SEARCH_ROOMS = "Rechercher un salon...";
 
+        private FrmLogin FrmLog { get => _frmLogin; set => _frmLogin = value; }
+        private Control BtnNewHobbies { get => _btnNewHobbies; set => _btnNewHobbies = value; }
+        private Image ImgAvatar { get => _imgAvatar; set => _imgAvatar = value; }
+        private Image ImgBackground { get => _imgBackground; set => _imgBackground = value; }
+        private List<string[]> FriendsList { get => _friendsList; set => _friendsList = value; }
+        private bool InEdit { get => _inEdit; set => _inEdit = value; }
+        private bool PwdHasChange { get => _pwdHasChange; set => _pwdHasChange = value; }
+        private bool AvatarHasChange { get => _avatarHasChange; set => _avatarHasChange = value; }
+        private bool BackgroundHasChange { get => _backgroundHasChange; set => _backgroundHasChange = value; }
+        private bool RePaint { get => _rePaint; set => _rePaint = value; }
+
 
         /// <summary>
         /// Constructeur qui permettra de stocker la page de login afin d'y retourner lorsqu'on fermera la page d'accueil
@@ -50,9 +61,11 @@ namespace Tchat
             InitializeComponent(); // ne pas oublier de remettre InitializeComponent() ici
 
             // Si on ne stocke pas la page de login via le constructeur alors on ne pourra pas l'afficher plus tard
-            this._frmLogin = frmLogin;
+            FrmLog = frmLogin;
             _requestsSQL = new RequestsSQL(_dbConnect.Connection);
         }
+
+
 
         #region FrmHomeEvents
         /// <summary>
@@ -77,7 +90,8 @@ namespace Tchat
                 }
             }
             // Initialisation des images des différents onglets
-            string[] arrayImg = _requestsSQL.GetUserImagesIdByUsername(_frmLogin.Username);
+            string[] arrayImg = FrmLog.Client.CallSendUsernameToGetUserImagesId(FrmLog.Username);
+            //string[] arrayImg = _requestsSQL.GetUserImagesIdByUsername(FrmLog.Username);
             string idAvatar = arrayImg[0];
             string idBackground = arrayImg[1];
             Image imgAvatar = null;
@@ -95,10 +109,10 @@ namespace Tchat
             InitPictureBox(pbxAvatar, imgAvatar, pbxBackground, imgBackground);
             
             // Initialisation du profil de l'utilisateur
-            Dictionary<string, string> profil = _requestsSQL.GetProfilByUsername(_frmLogin.Username); // Récupère les informations du profil de l'utilisateur
-            InitProfil(pbxAvatar2, imgAvatar, pbxBackground2, imgBackground, lblUsername, _frmLogin.Username, rtbDescription, profil["description"], tbxEmail, profil["email"], tbxPhone, profil["phone"], dgvHobbies, profil["hobbies"]);
+            Dictionary<string, string> profil = _requestsSQL.GetProfilByUsername(FrmLog.Username); // Récupère les informations du profil de l'utilisateur
+            InitProfil(pbxAvatar2, imgAvatar, pbxBackground2, imgBackground, lblUsername, FrmLog.Username, rtbDescription, profil["description"], tbxEmail, profil["email"], tbxPhone, profil["phone"], dgvHobbies, profil["hobbies"]);
 
-            lblHome.Text = "Bienvenue " + _frmLogin.Username + " !";
+            lblHome.Text = "Bienvenue " + FrmLog.Username + " !";
             // Gestion de la transparence des composants
             lblHome.Parent = pbxBackground;
             lnkEditProfil.Parent = pbxBackground;
@@ -113,9 +127,9 @@ namespace Tchat
             Placeholder phSearchRooms = new Placeholder(tbxSearchRoom, PLACEHOLDER_SEARCH_ROOMS);
 
             // Gestion de la liste d'ami
-            _friendsList = _requestsSQL.GetFriendsList(_requestsSQL.GetUserIdByUsername(_frmLogin.Username));
+            FriendsList = _requestsSQL.GetFriendsList(_requestsSQL.GetUserIdByUsername(FrmLog.Username));
             // REMARK : Création de la liste d'ami non satisfaisante (faut-il revoir l'interface ?)
-            foreach (string[] friend in _friendsList)
+            foreach (string[] friend in FriendsList)
             {
                 Image friendAvatar = _requestsSQL.GetFriendAvatarByFriendId(friend[0]); // On récupère l'avatar de notre ami
 
@@ -148,7 +162,7 @@ namespace Tchat
 
             if (dr == DialogResult.OK)
             {
-                _requestsSQL.UpdateStatutUser(RequestsSQL.OFFLINE, _frmLogin.Username); // Déconnexion de l'utilisateur
+                _requestsSQL.UpdateStatutUser(RequestsSQL.OFFLINE, FrmLog.Username); // Déconnexion de l'utilisateur
             }
             else
             {
@@ -161,7 +175,7 @@ namespace Tchat
         /// </summary>
         private void FrmHome_FormClosed(object sender, FormClosedEventArgs e)
         {
-            _frmLogin.Show();
+            FrmLog.Show();
         }
         #endregion FrmHomeEvents
 
@@ -207,7 +221,7 @@ namespace Tchat
                     break;
             }
             // Met à jour le statut
-            _requestsSQL.UpdateStatutUser(statut, _frmLogin.Username);
+            _requestsSQL.UpdateStatutUser(statut, FrmLog.Username);
         }
         #endregion UserStatus
 
@@ -229,8 +243,8 @@ namespace Tchat
             background.Image = imgBackground;
 
             // On stocke les images
-            _imgAvatar = imgAvatar;
-            _imgBackground = imgBackground;
+            ImgAvatar = imgAvatar;
+            ImgBackground = imgBackground;
         }
 
         /// <summary>
@@ -309,12 +323,12 @@ namespace Tchat
                 tcWindows.TabPages.Remove(tpSettings);
 
                 // On récupère le mot de passe de l'utilisateur et on l'affiche dans le textbox
-                tbxPwd.Text = _requestsSQL.GetUserPasswordByUsername(_frmLogin.Username);
+                tbxPwd.Text = _requestsSQL.GetUserPasswordByUsername(FrmLog.Username);
 
                 // On ajoute des boutons qui permettront d'éditer les différentes informations de l'utilisateur
                 Design.AddEditButtonForControl(tbxPwd, gbxInformation, "BtnPwd", "Wingdings", "!", BtnPwd_Click, EDIT_TAG);
-                _btnNewHobbies = Design.AddEditButtonForControl(tbxNewHobbie, gbxInformation, "BtnNewHobbie", "Wingdings 2", "Ì", BtnNewHobbie_Click, EDIT_TAG);
-                _btnNewHobbies.Enabled = false;
+                BtnNewHobbies = Design.AddEditButtonForControl(tbxNewHobbie, gbxInformation, "BtnNewHobbie", "Wingdings 2", "Ì", BtnNewHobbie_Click, EDIT_TAG);
+                BtnNewHobbies.Enabled = false;
 
                 // On ajoute la colonne des boutons
                 if (!dgvHobbies.Columns.Contains("ColumnButton"))
@@ -326,7 +340,7 @@ namespace Tchat
 
                 // Ajout d'une bordure et changement du curseur sur les picturebox
                 // pour indiqué que l'on peut changer l'image en cliquant dessus
-                _rePaint = true;
+                RePaint = true;
                 pbxBackground2.Refresh();
                 pbxAvatar2.Cursor = Cursors.Hand;
                 pbxBackground2.Cursor = Cursors.Hand;
@@ -354,18 +368,18 @@ namespace Tchat
 
                 DisposeEditsControls(); // Supprime les composants dynamiques de l'édition
 
-                string hobbies = _requestsSQL.GetUserHobbiesByUsername(_frmLogin.Username);
+                string hobbies = _requestsSQL.GetUserHobbiesByUsername(FrmLog.Username);
                 UpdateHobbies(dgvHobbies, hobbies); // Met à jour le DataGridView des hobbies
 
                 // On (ré)affiche la bonne image pour si jamais l'utilisateur avait annulé sa modification du profil
                 // TODO : les images sont mal enregistrer (en local)
-                pbxAvatar2.Image = _imgAvatar;
-                pbxBackground2.Image = _imgBackground;
+                pbxAvatar2.Image = ImgAvatar;
+                pbxBackground2.Image = ImgBackground;
 
                 pbxAvatar2.Cursor = Cursors.Arrow;
                 pbxBackground2.Cursor = Cursors.Arrow;
             }
-            _inEdit = inEdit;
+            InEdit = inEdit;
         }
 
         /// <summary>
@@ -396,7 +410,7 @@ namespace Tchat
         /// </summary>
         private void BtnPwd_Click(object sender, EventArgs e)
         {
-            _pwdHasChange = true; // à faire au tout début pour éviter tout problème avec le TextChange
+            PwdHasChange = true; // à faire au tout début pour éviter tout problème avec le TextChange
 
             // Récupère le bouton et le rend invisible
             Button btn = (Button)sender;
@@ -418,7 +432,7 @@ namespace Tchat
         /// </summary>
         private void BtnPwdConfirm_Click(object sender, EventArgs e)
         {
-            _pwdHasChange = false; // à faire au tout début pour éviter tout problème avec le TextChange
+            PwdHasChange = false; // à faire au tout début pour éviter tout problème avec le TextChange
 
             // Récupère le bouton et le rend invisible
             Button btn = (Button)sender;
@@ -428,7 +442,7 @@ namespace Tchat
             
             tbxPwdConfirm.Text = String.Empty;
             // On récupère le mot de passe de l'utilisateur et on l'affiche dans le textbox
-            tbxPwd.Text = _requestsSQL.GetUserPasswordByUsername(_frmLogin.Username);
+            tbxPwd.Text = _requestsSQL.GetUserPasswordByUsername(FrmLog.Username);
 
             // Gestion de l'affichage
             tbxPwdConfirm.Visible = false;
@@ -475,7 +489,7 @@ namespace Tchat
         {
             PictureBox pbx = (PictureBox)sender;
 
-            if (_inEdit)
+            if (InEdit)
             {
                 OpenFileDialog ofd = new OpenFileDialog();
                 ofd.Filter = "Image Files (*.bmp, *.jpg, *.png, *.gif)|*.bmp;*.jpg;*.png;*.gif";
@@ -492,9 +506,9 @@ namespace Tchat
 
                     // On indique qu'un picturebox a changé d'image
                     if (pbx.Name == pbxAvatar2.Name)
-                        _avatarHasChange = true;
+                        AvatarHasChange = true;
                     else
-                        _backgroundHasChange = true;
+                        BackgroundHasChange = true;
                 }
 
             }
@@ -512,7 +526,7 @@ namespace Tchat
             // prévenir l'utilisateur avec un message lui indiquant qu'il ne peut pas changer d'onglet en mode édition
 
             // On désactive le changement d'onglet lorsqu'on est en mode d'édition
-            if (_inEdit) 
+            if (InEdit) 
                 e.Cancel = true; 
         }
 
@@ -553,23 +567,23 @@ namespace Tchat
                     hobbies = null; // On met null si il n'y a pas d'hobby pour pas en avoir 1 "vide"/"sans nom"
 
                 // Mise à jours des images de profil et de fond
-                if (_avatarHasChange)
+                if (AvatarHasChange)
                 {
                     idAvatar = ManagesPicturebox(pbxAvatar2, COLUMN_AVATAR);
                 }
-                if (_backgroundHasChange)
+                if (BackgroundHasChange)
                 {
                     idBackground = ManagesPicturebox(pbxBackground2, COLUMN_BACKGROUD);
                 }
 
                 // Mise à jour du profil
-                _requestsSQL.UpdateProfilUser(_frmLogin.Username, email, phone, description, hobbies);
+                _requestsSQL.UpdateProfilUser(FrmLog.Username, email, phone, description, hobbies);
 
                 // On modifie le mdp de l'utilisateur si il a changés
-                if (_pwdHasChange)
+                if (PwdHasChange)
                 {
-                    _requestsSQL.UpdatePasswordUser(_frmLogin.Username, password);
-                    _pwdHasChange = false;
+                    _requestsSQL.UpdatePasswordUser(FrmLog.Username, password);
+                    PwdHasChange = false;
                 }
 
                 EditMode(false);
@@ -601,18 +615,18 @@ namespace Tchat
             {
                 case "avatar":
                     pbxAvatar.Image = img; // Change l'image du PictureBox dans l'onglet Accueil
-                    _imgAvatar = img; // Stocke l'image
+                    ImgAvatar = img; // Stocke l'image
                     break;
                 case "background":
                     pbxBackground.Image = img; // Change l'image du PictureBox dans l'onglet Accueil
-                    _imgBackground = img; // Stocke l'image
+                    ImgBackground = img; // Stocke l'image
                     break;
                 default:
                     Console.WriteLine("Paramètre inconnu reçu lors de l'exécution de la methode UpdatePictureBox");
                     break;
             }
             // Met à jour l'ID de l'avatar de l'utilisateur
-            _requestsSQL.UpdateIdImageOfUser(_frmLogin.Username, columnImg, idImg);
+            _requestsSQL.UpdateIdImageOfUser(FrmLog.Username, columnImg, idImg);
 
             return idImg; // Retourne l'ID de l'image que l'on vient d'ajouter
         }
@@ -656,7 +670,7 @@ namespace Tchat
             // Si la confirmation du mdp est identique au mdp et si la longueur du mdp est > à 0
             // Ou si le mot de passe n'a pas changer
             // Alors on active le bouton d'enregistrement
-            if ((tbxPwd.Text == tbxPwdConfirm.Text && tbxPwd.Text.Length > 0) || (_pwdHasChange == false))
+            if ((tbxPwd.Text == tbxPwdConfirm.Text && tbxPwd.Text.Length > 0) || (PwdHasChange == false))
             {
                 btnSave.Enabled = true;
             }
@@ -679,9 +693,9 @@ namespace Tchat
         {
             // Active ou désactive le bouton d'ajout
             if (String.IsNullOrWhiteSpace(tbxNewHobbie.Text))
-                _btnNewHobbies.Enabled = false;
+                BtnNewHobbies.Enabled = false;
             else
-                _btnNewHobbies.Enabled = true;
+                BtnNewHobbies.Enabled = true;
         }
 
         /// <summary>
@@ -693,7 +707,7 @@ namespace Tchat
             // On test si le texte correspond à celui du placeholder pour être sûr de désactiver le bouton même si l'event se produit trop tard
             if (String.IsNullOrWhiteSpace(tbxNewHobbie.Text) || tbxNewHobbie.Text == PLACEHOLDER_HOBBIES)
             {
-                _btnNewHobbies.Enabled = false;
+                BtnNewHobbies.Enabled = false;
             }
         }
 
@@ -731,11 +745,11 @@ namespace Tchat
         private void PaintPictureBox(object sender, PaintEventArgs e)
         {
             // Si il s'agit d'un Paint "manuelle"
-            if (_rePaint)
+            if (RePaint)
             {
                 PictureBox pbx = (PictureBox)sender;
                 Design.DrawDashedBorder(pbx, e);
-                _rePaint = false;
+                RePaint = false;
             }
         }
 
@@ -748,13 +762,13 @@ namespace Tchat
         /// </summary>
         private void btnAddFriend_Click(object sender, EventArgs e)
         {
-            FrmFriendInvitation frmFriendInvitation = new FrmFriendInvitation(_frmLogin, _requestsSQL);
+            FrmFriendInvitation frmFriendInvitation = new FrmFriendInvitation(FrmLog, _requestsSQL);
             frmFriendInvitation.ShowDialog();
 
             if (frmFriendInvitation.DialogResult == DialogResult.OK)
             {
                 // On récupère les ID des utilisateurs
-                string idUserSender = _requestsSQL.GetUserIdByUsername(_frmLogin.Username);
+                string idUserSender = _requestsSQL.GetUserIdByUsername(FrmLog.Username);
                 string idUserReceiver = _requestsSQL.GetUserIdByUsername(frmFriendInvitation.FriendRequest);
 
                 string messageRequest = frmFriendInvitation.MessageRequest;

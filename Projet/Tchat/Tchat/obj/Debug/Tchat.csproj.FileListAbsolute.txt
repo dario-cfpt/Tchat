@@ -43,3 +43,5 @@ C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.c
 C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.csproj.CoreCompileInputs.cache
 C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.exe
 C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\obj\Debug\Tchat.pdb
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\bin\Debug\MySql.Data.dll
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\Tchat\bin\Debug\MySql.Data.xml
