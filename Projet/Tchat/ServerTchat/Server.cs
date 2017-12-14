@@ -157,20 +157,41 @@ namespace ServerTchat
                 // Deserialize the data of the array into another jagged byte array (byte[][])
                 ms = new MemoryStream(bufferReceive[1]);
                 bf = new BinaryFormatter();
-                byte[][] dataReceive = (byte[][])bf.Deserialize(ms);
-
+                byte[][] receivedData = (byte[][])bf.Deserialize(ms);
+                
                 // Recup the command string of the buffer and execute the command associate
                 string command = Encoding.UTF8.GetString(bufferReceive[0]);
                 switch (command)
                 {
                     case "/login":
-                        SvRequest.CommandLogin(handler, dataReceive);
+                        SvRequest.CommandLogin(handler, receivedData);
                         break;
                     case "/createAccount":
-                        SvRequest.CommandCreateAccount(handler, dataReceive);
+                        SvRequest.CommandCreateAccount(handler, receivedData);
+                        break;
+                    case "/GetUsername":
+                        SvRequest.CommandGetUsernameByUserId(handler, receivedData);
+                        break;
+                    case "/GetUserId":
+                        SvRequest.CommandGetUserIdByUsername(handler, receivedData);
                         break;
                     case "/GetUserImagesId":
-                        SvRequest.CommandGetUserImagesIdByUsername(handler, dataReceive);
+                        SvRequest.CommandGetUserImagesIdByUsername(handler, receivedData);
+                        break;
+                    case "/GetImage":
+                        SvRequest.CommandGetImageById(handler, receivedData);
+                        break;
+                    case "/GetProfil":
+                        SvRequest.CommandGetProfilByUsername(handler, receivedData);
+                        break;
+                    case "/GetFriendsList":
+                        SvRequest.CommandGetFriendsListByUserId(handler, receivedData);
+                        break;
+                    case "/GetFriendAvatar":
+                        SvRequest.CommandGetFriendAvatarByFriendId(handler, receivedData);
+                        break;
+                    case "/UpdateStatut":
+                        SvRequest.CommandUpdateStatut(handler, receivedData);
                         break;
                     default:
                         Console.WriteLine("Unknown command");

@@ -13,3 +13,4 @@ C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\ServerTchat\bin\Debug\S
 C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\ServerTchat\bin\Debug\ServerTchat.pdb
 C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\ServerTchat\obj\Debug\ServerTchat.exe
 C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\ServerTchat\bin\Debug\MySql.Data.dll
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\ServerTchat\bin\Debug\MySql.Data.xml
