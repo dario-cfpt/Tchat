@@ -5,3 +5,11 @@ C:\Users\GENGAD_INFO\Desktop\Informatique 2017-2018\Atelier Application\Projet\T
 C:\Users\GENGAD_INFO\Desktop\Informatique 2017-2018\Atelier Application\Projet\Tchat\ServerTchat\obj\Debug\ServerTchat.csproj.CoreCompileInputs.cache
 C:\Users\GENGAD_INFO\Desktop\Informatique 2017-2018\Atelier Application\Projet\Tchat\ServerTchat\obj\Debug\ServerTchat.exe
 C:\Users\GENGAD_INFO\Desktop\Informatique 2017-2018\Atelier Application\Projet\Tchat\ServerTchat\obj\Debug\ServerTchat.pdb
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\ServerTchat\obj\Debug\ServerTchat.csprojResolveAssemblyReference.cache
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\ServerTchat\obj\Debug\ServerTchat.csproj.CoreCompileInputs.cache
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\ServerTchat\obj\Debug\ServerTchat.pdb
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\ServerTchat\bin\Debug\ServerTchat.exe.config
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\ServerTchat\bin\Debug\ServerTchat.exe
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\ServerTchat\bin\Debug\ServerTchat.pdb
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\ServerTchat\obj\Debug\ServerTchat.exe
+C:\Users\GENGAD_INFO\Documents\GitHub\Tchat\Projet\Tchat\ServerTchat\bin\Debug\MySql.Data.dll
