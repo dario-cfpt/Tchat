@@ -10,7 +10,6 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.Collections.Generic;
 using System.Drawing.Imaging;
-using System.Net;
 //using Rtb = RicherTextBox.RicherTextBox; // https://www.codeproject.com/Articles/24443/RicherTextBox
 
 namespace Tchat

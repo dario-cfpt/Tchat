@@ -2,32 +2,58 @@
  * Description : Chat online in Windows Form C#. Users can chat privately or they can chat in groups in "rooms"
  * Class : ClientTchat - Manage the connection between the client and the server
  * Author : GENGA Dario
- * Last update : 2017.11.30 (yyyy-MM-dd)
+ * Last update : 2017.12.14 (yyyy-MM-dd)
  */
 using System;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
-using System.Threading;
 
 namespace Tchat
 {
-    class ClientTchat
+    /// <summary>
+    /// Manage the connection between the client and the server
+    /// </summary>
+    public class ClientTchat
     {
-        private ManualResetEvent _connectDone;
-        private ManualResetEvent _sendDone;
-        private const string SERVER_HOSTNAME = "CFPI-R107PC42";
+        private const string SERVER_HOSTNAME = "CFPI-R113PC12";
         private const int PORT = 3001;
 
-        public ClientTchat(string username, string password)
+        private Socket _client;
+        private ClientRequest _clRequest;
+        private bool _connected = false;
+        private bool _logged = false;
+
+        /// <summary>
+        /// Manage the chat client (connection and data)
+        /// </summary>
+        /// <param name="username">Username of the user</param>
+        /// <param name="password">Password of the user</param>
+        public ClientTchat()
         {
-            _connectDone = new ManualResetEvent(false);
-            _sendDone = new ManualResetEvent(false);
-            Start(username, password);
+            StartConnection();
         }
+
+        /// <summary>
+        /// Indicate if the user is connected to the database (true = connected, false = not connected)
+        /// </summary>
+        public bool Logged { get => _logged; set => _logged = value; }
+
+        /// <summary>
+        /// The socket of the client
+        /// </summary>
+        private Socket Client { get => _client; set => _client = value; }
+
+        /// <summary>
+        /// The requests between the client and the server
+        /// </summary>
+        private ClientRequest ClRequest { get => _clRequest; set => _clRequest = value; }
+
+        /// <summary>
+        /// The state of the connection of the client with the server
+        /// <para>Is true when the user is connected</para>
+        /// </summary>
+        private bool Connected { get => _connected; set => _connected = value; }
+
 
         /// <summary>
         /// Recup the IP Address of the server by his hostname
@@ -47,29 +73,25 @@ namespace Tchat
             throw new Exception("No network adapters with an IPv4 address in the system!");
         }
 
-    
         /// <summary>
-        /// Start the connection with the server
+        /// Start the connection with the server and try to connect the user to the database
+        /// <param name="username">Username of the user</param>
+        /// <param name="password">Password of the user</param>
         /// </summary>
-        private void Start(string username, string password)
+        private void StartConnection()
         {
             try
             {
                 IPAddress ipAddress = IPAddress.Parse(GetServerIpAdress(SERVER_HOSTNAME)); // Recup the ip address of the server
                 IPEndPoint remoteEP = new IPEndPoint(ipAddress, PORT);
                 
-                Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp); // Create a TCP/IP socket
+                Client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp); // Create a TCP/IP socket
 
-                socket.BeginConnect(remoteEP, new AsyncCallback(ConnectCallback), socket); // Connect to the remote endpoint
-                
-                _connectDone.WaitOne(); // Wait for the connection with the server
+                Client.Connect(remoteEP); // Connect the Socket to the remote endpoint
 
-                SendLogin(socket, username, password);
-                
-                // Shutdown and close the socket
-                //socket.Shutdown(SocketShutdown.Both);
-                //socket.Close();
+                ClRequest = new ClientRequest(Client); // Create the request for the client
 
+                Connected = true;
             }
             catch (Exception ex)
             {
@@ -78,66 +100,42 @@ namespace Tchat
         }
 
         /// <summary>
-        /// Established the connection between the client and the server
+        /// Call the method who send the connection data to the server for connecting the user to the database
         /// </summary>
-        /// <param name="ar">The state of the asynchronous operation</param>
-        private void ConnectCallback(IAsyncResult ar)
+        /// <param name="username">Username of the user</param>
+        /// <param name="password">Password of the user</param>
+        public void CallSendLogin(string username, string password)
         {
-            try
+            if (Connected)
             {
-                Socket client = (Socket)ar.AsyncState;
-
-                client.EndConnect(ar);
-                Console.WriteLine("Socket connected to {0}", client.RemoteEndPoint.ToString());
-
-                _connectDone.Set();
-                Console.WriteLine("Connection with the server established !");
-                
+                Logged = ClRequest.SendLogin(username, password); // Save the result of the connection
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine(ex);
+                Console.WriteLine("The socket must be connected to the server !");
+            }
+        }
+        
+        /// <summary>
+        /// Call the method who send the data for creating a new account to the database
+        /// </summary>
+        /// <param name="username">The username of the user</param>
+        /// <param name="password">The password of the user</param>
+        /// <param name="email">The email of the user</param>
+        /// <param name="phone">The phone of the user</param>
+        public bool CallSendNewAccount(string username, string password, string email, string phone)
+        {
+            if (Connected)
+            {
+                return ClRequest.SendNewAccount(username, password, email, phone); // Return the response of the server
+            }
+            else
+            {
+                Console.WriteLine("The socket must be connected to the server !");
+                return false;
             }
         }
 
-        private void SendLogin(Socket client, string username, string password)
-        {
-            byte[][] login = { Encoding.ASCII.GetBytes(username), Encoding.ASCII.GetBytes(password) };
-
-
-            MemoryStream ms = new MemoryStream();
-            BinaryFormatter bf = new BinaryFormatter();
-            bf.Serialize(ms, login);
-            byte[] byteData = ms.ToArray();
-            
-
-            // Convert the string data to byte data using ASCII encoding.
-            //byte[] byteData = Encoding.ASCII.GetBytes(username);
-
-
-            // Begin sending the data to the remote device.  
-            client.BeginSend(byteData, 0, login.Length, 0, new AsyncCallback(SendCallback), client);
-        }
-
-        private void SendCallback(IAsyncResult ar)
-        {
-            try
-            {
-                // Retrieve the socket from the state object.  
-                Socket client = (Socket)ar.AsyncState;
-
-                // Complete sending the data to the remote device.  
-                int bytesSent = client.EndSend(ar);
-                Console.WriteLine("Sent {0} bytes to server.", bytesSent);
-
-                // Signal that all bytes have been sent.  
-                _sendDone.Set();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
-        }
 
     }
 }
