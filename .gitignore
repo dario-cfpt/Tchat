@@ -316,3 +316,4 @@ ASALocalRun/
 
 # MSBuild Binary and Structured Log
 *.binlog
+Projet/Tchat/.vs/Tchat/v15/sqlite3/storage.ide
