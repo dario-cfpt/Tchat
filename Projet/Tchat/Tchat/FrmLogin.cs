@@ -3,7 +3,7 @@
  * Form : FrmLogin - This is first form of the app, the user can log in or create an account
  * Author : GENGA Dario
  * Project creation : 2017.08.31
- * Last update : 2017.10.2017
+ * Last update : 2017.12.14 (yyyy-MM-dd)
  * © 2017
  */
 
@@ -14,68 +14,84 @@ namespace Tchat
 {
     public partial class FrmLogin : Form
     {
-        public FrmLogin()
-        {
-            InitializeComponent();
-        }
-        private string _username; // Contient le pseudo de l'utilisateur actuellement connecté
+        private string _username;
+        private ClientTchat _client;
 
         public const string SERVER = "localhost";
         public const string DATABASE = "mytchatroomdb";
         public const string USER = "admin";
         public const string PASSWORD = "8185c8ac4656219f4aa5541915079f7b3743e1b5f48bacfcc3386af016b55320";
 
-        public string Username
+        public FrmLogin()
         {
-            get { return this._username; }
-            set { this._username = value; }
+            InitializeComponent();
+            Client = new ClientTchat(); // Try to connect the client to the server
         }
 
-        // Ouvre la fenêtre d'inscription lorsqu'on clique sur le lien
+        /// <summary>
+        /// Contain the name of the user connected
+        /// </summary>
+        public string Username { get => _username;  set => _username = value; }
+
+        /// <summary>
+        /// Containt all methods who manage the connection between the client and server
+        /// </summary>
+        public ClientTchat Client { get => _client; set => _client = value; }
+        
+        /// <summary>
+        /// Open the registration page when we click on the link
+        /// </summary>
         private void lnkNoAccount_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            FrmRegister frmRegister = new FrmRegister();
+            FrmRegister frmRegister = new FrmRegister(_client);
 
-            var dr = frmRegister.ShowDialog(); // Ouvre la fenêtre d'inscription
+            var dr = frmRegister.ShowDialog(); // Open the registration page
 
-            if(dr == DialogResult.OK)
+            if (dr == DialogResult.OK)
             {
-                // Remplit automatiquement les textbox une fois que le compte a été créer
+                // Complete automaticaly the textbox when the account has been created
                 tbxUserName.Text = frmRegister.Username;
                 tbxPassword.Text = frmRegister.Password;
-                btnLogin.Select(); // met le focus sur le bouton login
+
+                btnLogin.Select();
             }
 
         }
-
-        // L'utilisateur tente de se connecter à la base
+        
+        /// <summary>
+        /// Try to connect the user to the database
+        /// </summary>
         private void btnLogin_Click(object sender, EventArgs e)
         {
             string username = tbxUserName.Text;
             string password = tbxPassword.Text;
 
-            DatabaseConnection dbConnect = new DatabaseConnection(SERVER, DATABASE, USER, PASSWORD);
-            RequestsSQL requests = new RequestsSQL(dbConnect.Connection);
+            Client.CallSendLogin(username, password);
 
-            ClientTchat client = new ClientTchat(username, password);
-
-            if (requests.Login(username, password))
+            if (Client.Logged)
             {
+                // The user has connected successfully 
                 MessageBox.Show("Bonjour " + username + " !", "Connexion réussi !");
 
-                Username = username; // On enregistrer le pseudo de l'utilisateur connecté
+                Username = username; // Save the username after the connection
 
                 FrmHome frmHome = new FrmHome(this);
                 frmHome.Show();
-                this.Hide();
+                Hide();
             }
             else
             {
-                MessageBox.Show("Le nom d'utilisateur ou le mot de passe est incorrect !", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // Unknown user or incorrect password
+                string message = "Le nom d'utilisateur ou le mot de passe est incorrect !";
+                string title = "Erreur";
+
+                MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
-        // Active ou désactive le bouton de login
+        
+        /// <summary>
+        /// Activate or deactivate the button for the connection
+        /// </summary>
         private void tbxUserName_TextChanged(object sender, EventArgs e)
         {
             if (tbxUserName.Text != "" && tbxPassword.Text != "")
@@ -88,9 +104,12 @@ namespace Tchat
             }
         }
         
-        // Filtrage des caractères
+        /// <summary>
+        /// Filtering characters
+        /// </summary>
         private void tbxUserName_KeyPress(object sender, KeyPressEventArgs e)
         {
+            // Authorize only letters, numbers and controls
             if ((!char.IsLetter(e.KeyChar)) && (!char.IsNumber(e.KeyChar)) && (!char.IsControl(e.KeyChar)))
                 e.Handled = true;
         }
