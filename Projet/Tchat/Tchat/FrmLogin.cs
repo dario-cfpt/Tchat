@@ -22,6 +22,13 @@ namespace Tchat
         public const string USER = "admin";
         public const string PASSWORD = "8185c8ac4656219f4aa5541915079f7b3743e1b5f48bacfcc3386af016b55320";
 
+        // Les différents statuts de connection accepté dans la base :
+        public const string ONLINE = "En ligne";
+        public const string ABSENT = "Absent";
+        public const string DO_NOT_DISTURB = "Ne pas déranger";
+        public const string INVISIBLE = "Invisible";
+        public const string OFFLINE = "Hors-ligne";
+
         public FrmLogin()
         {
             InitializeComponent();
@@ -66,7 +73,7 @@ namespace Tchat
             string username = tbxUserName.Text;
             string password = tbxPassword.Text;
 
-            Client.CallSendLogin(username, password);
+            Client.TryLogin(username, password);
 
             if (Client.Logged)
             {
