@@ -1,15 +1,21 @@
-﻿/* Description : Class who create a placeholder for a textbox in C# Windows Form
+﻿/* Project name : Tchat
+ * Description : Chat online in Windows Form C#. Users can chat privately or they can chat in groups in "rooms"
+ * Form : FrmRegister - This form is used to create a new account
+ * Class : Placeholder - Create a placeholder for a TextBox in C# Windows Form
  * Author : GENGA Dario
- * Last update : 16.11.2017 
+ * Last update : 2017.12.17 (yyyy-MM-dd)
  */
 using System;
 using System.Windows.Forms;
 
+/// <summary>
+/// Create a placeholder for a TextBox in C# Windows Form
+/// </summary>
 public class Placeholder
 {
-    private bool _placerholderIsDisabled; // State of the placeholder (disabled = true, enabled = false)
     private TextBox _tbx;
     private string _textPlaceholder;
+    private bool _placerholderIsDisabled;
 
     /// <summary>
     /// Instantiate the placeholder for the textbox
@@ -18,7 +24,7 @@ public class Placeholder
     /// <param name="textPlaceholder">The text of the placeholder</param>
     public Placeholder(TextBox tbx, string textPlaceholder)
     {
-        _placerholderIsDisabled = false;
+        PlacerholderIsDisabled = false;
 
         Tbx = tbx;
         TextPlaceholder = textPlaceholder;
@@ -27,15 +33,6 @@ public class Placeholder
         tbx.TextChanged += Tbx_TextChanged;
         tbx.GotFocus += Tbx_GotFocus;
         tbx.LostFocus += Tbx_LostFocus;
-    }
-
-    /// <summary>
-    /// The text of the placeholder
-    /// </summary>
-    public string TextPlaceholder
-    {
-        get => _textPlaceholder;
-        set => _textPlaceholder = value;
     }
 
     /// <summary>
@@ -48,6 +45,21 @@ public class Placeholder
     }
 
     /// <summary>
+    /// The text of the placeholder
+    /// </summary>
+    public string TextPlaceholder
+    {
+        get => _textPlaceholder;
+        set => _textPlaceholder = value;
+    }
+    
+    /// <summary>
+    /// State of the placeholder (disabled = true, enabled = false)
+    /// </summary>
+    private bool PlacerholderIsDisabled { get => _placerholderIsDisabled; set => _placerholderIsDisabled = value; }
+
+
+    /// <summary>
     /// When the text of the textbox change and if the textbox is focused then the placeholder is disabled
     /// </summary>
     private void Tbx_TextChanged(object sender, EventArgs e)
@@ -56,7 +68,7 @@ public class Placeholder
         // so the system cannot disabled the placeholder at our place
         if (Tbx.Focused)
         {
-            _placerholderIsDisabled = true;
+            PlacerholderIsDisabled = true;
         }
     }
 
@@ -65,7 +77,7 @@ public class Placeholder
     /// </summary>
     private void Tbx_GotFocus(object sender, EventArgs e)
     {
-        if (!_placerholderIsDisabled)
+        if (!PlacerholderIsDisabled)
         {
             Tbx.Text = "";
         }
@@ -79,7 +91,7 @@ public class Placeholder
         if (String.IsNullOrWhiteSpace(Tbx.Text))
         {
             Tbx.Text = TextPlaceholder;
-            _placerholderIsDisabled = false;
+            PlacerholderIsDisabled = false;
         }
     }
 

@@ -2,14 +2,12 @@
  * Description : Chat online in Windows Form C#. Users can chat privately or they can chat in groups in "rooms"
  * Form : FrmHome - This is the main form of the application when the user is connected.
  * Author : GENGA Dario
- * Last update : 2017.11.23 (yyyy-MM-dd)
+ * Last update : 2017.12.17 (yyyy-MM-dd)
  */
-
 using System;
-using System.Windows.Forms;
-using System.Drawing;
 using System.Collections.Generic;
-using System.Drawing.Imaging;
+using System.Drawing;
+using System.Windows.Forms;
 
 namespace Tchat
 {
@@ -19,54 +17,120 @@ namespace Tchat
     public partial class FrmHome : Form
     {
         private FrmLogin _frmLogin;
-        private DatabaseConnection _dbConnect = new DatabaseConnection(FrmLogin.SERVER, FrmLogin.DATABASE, FrmLogin.USER, FrmLogin.PASSWORD);
-        private RequestsSQL _requestsSQL;
-        private Control _btnNewHobbies; // Contiendra le bouton d'ajout de nouvel hobby
-
-        // On stocke l'image de l'avatar et du backjground pour pouvoir la remettre en cas d'annulation sans refaire de requête
+        private ClientTchat _client;
+        
         private Image _imgAvatar; 
         private Image _imgBackground;
-
+        private Control _btnNewHobbies;
         private List<string[]> _friendsList;
 
-        private bool _inEdit = false; // Indique si on est en mode d'edition
-        private bool _pwdHasChange = false; // Si cette variable est à true, alors on doit modifier le mdp de l'utilisateur
-        private bool _avatarHasChange = false; // Si cette variable est à true, alors on doit modifier l'avatar de l'utilisateur
-        private bool _backgroundHasChange = false; // Si cette variable est à true, alors on doit modifier le background de l'utilisateur
-        private bool _rePaint = false; // Indique si on déclanche l'event Paint manuellement
+        private bool _inEdit = false;
+        private bool _pwdHasChange = false;
+        private bool _avatarHasChange = false; 
+        private bool _backgroundHasChange = false;
+        private bool _rePaint = false;
+        private bool _exitApp = false;
 
-        public const string EDIT_TAG = "edit"; // Le tag des composants (dynamiques) de l'édition
+        #region ConstString
+        #region ConnectionStatut
+        // The different statut of connection accepted in the base :
+        private const string ONLINE = "En ligne";
+        private const string ABSENT = "Absent";
+        private const string DO_NOT_DISTURB = "Ne pas déranger";
+        private const string INVISIBLE = "Invisible";
+        private const string OFFLINE = "Hors-ligne";
+        #endregion ConnectionStatut
+        public const string EDIT_TAG = "edit"; //The tag of the(dynamic) components of the edition
         public const string COLUMN_AVATAR = "AVATAR_ID";
         public const string COLUMN_BACKGROUD = "BACKGROUND_ID";
         public const string PLACEHOLDER_HOBBIES = "Ajouter un centre d'intérêt...";
         public const string PLACEHOLDER_SEARCH_FRIENDS = "Rechercher un ami...";
         public const string PLACEHOLDER_SEARCH_ROOMS = "Rechercher un salon...";
-
-        private FrmLogin FrmLog { get => _frmLogin; set => _frmLogin = value; }
-        private Control BtnNewHobbies { get => _btnNewHobbies; set => _btnNewHobbies = value; }
-        private Image ImgAvatar { get => _imgAvatar; set => _imgAvatar = value; }
-        private Image ImgBackground { get => _imgBackground; set => _imgBackground = value; }
-        private List<string[]> FriendsList { get => _friendsList; set => _friendsList = value; }
-        private bool InEdit { get => _inEdit; set => _inEdit = value; }
-        private bool PwdHasChange { get => _pwdHasChange; set => _pwdHasChange = value; }
-        private bool AvatarHasChange { get => _avatarHasChange; set => _avatarHasChange = value; }
-        private bool BackgroundHasChange { get => _backgroundHasChange; set => _backgroundHasChange = value; }
-        private bool RePaint { get => _rePaint; set => _rePaint = value; }
-
-
+        #endregion ConstString
 
         /// <summary>
-        /// Constructeur qui permettra de stocker la page de login afin d'y retourner lorsqu'on fermera la page d'accueil
+        /// The home window, compound of multiple tab.
         /// </summary>
+        /// <param name="frmLogin">The form that contains the client object and the name of the connected user</param>
         public FrmHome(FrmLogin frmLogin)
         {
-            InitializeComponent(); // ne pas oublier de remettre InitializeComponent() ici
+            InitializeComponent();
 
-            // Si on ne stocke pas la page de login via le constructeur alors on ne pourra pas l'afficher plus tard
-            FrmLog = frmLogin;
-            _requestsSQL = new RequestsSQL(_dbConnect.Connection);
+            FrmLogin = frmLogin;
+
+            Client = FrmLogin.Client;
+            Username = FrmLogin.Username;
         }
 
+        /// <summary>
+        /// The form login
+        /// </summary>
+        private FrmLogin FrmLogin { get => _frmLogin; set => _frmLogin = value; }
+
+        /// <summary>
+        /// Containt all methods who manage the connection between the client and server
+        /// </summary>
+        private ClientTchat Client { get => _client; set => _client = value; }
+
+        /// <summary>
+        /// Contain the name of the user connected
+        /// </summary>
+        public string Username { get => FrmLogin.Username; set => FrmLogin.Username = value; }
+
+        /// <summary>
+        /// Contain the password of the user connected
+        /// </summary>
+        private string Password { get => FrmLogin.Password; set => FrmLogin.Password = value; }
+
+        /// <summary>
+        /// The actual avatar image of the user
+        /// </summary>
+        private Image ImgAvatar { get => _imgAvatar; set => _imgAvatar = value; }
+
+        /// <summary>
+        /// The actual background image of the user
+        /// </summary>
+        private Image ImgBackground { get => _imgBackground; set => _imgBackground = value; }
+
+        /// <summary>
+        /// Contains the add button of new hobbies
+        /// </summary>
+        private Control BtnNewHobbies { get => _btnNewHobbies; set => _btnNewHobbies = value; }
+
+        /// <summary>
+        /// The friend list of the user
+        /// </summary>
+        private List<string[]> FriendsList { get => _friendsList; set => _friendsList = value; }
+
+        /// <summary>
+        /// Indicate the edition mode is on (true = on, false = off)
+        /// </summary>
+        private bool InEdit { get => _inEdit; set => _inEdit = value; }
+
+        /// <summary>
+        /// Indicate if we have to change the password of the user (true = yes, false = no)
+        /// </summary>
+        private bool PwdHasChange { get => _pwdHasChange; set => _pwdHasChange = value; }
+
+        /// <summary>
+        /// Indicate if we have to change the avatar image of the user (true = yes, false = no)
+        /// </summary>
+        private bool AvatarHasChange { get => _avatarHasChange; set => _avatarHasChange = value; }
+
+        /// <summary>
+        /// Indicate if we have to change the background image of the user (true = yes, false = no)
+        /// </summary>
+        private bool BackgroundHasChange { get => _backgroundHasChange; set => _backgroundHasChange = value; }
+
+        /// <summary>
+        /// Indicate if we have to triggers the Paint event manually (true = yes, false = no)
+        /// </summary>
+        private bool RePaint { get => _rePaint; set => _rePaint = value; }
+
+        /// <summary>
+        /// Indicate if we have to exit the application (true = yes, false = no)
+        /// </summary>
+        private bool ExitApp { get => _exitApp; set => _exitApp = value; }
 
 
         #region FrmHomeEvents
@@ -75,7 +139,7 @@ namespace Tchat
         /// Initialize the differents components of the interface
         /// </summary>
         private void FrmHome_Load(object sender, EventArgs e)
-        {
+        {   
             // Initialize the date and hour
             DateTime dt = new DateTime();
             dt = DateTime.Now;
@@ -92,29 +156,36 @@ namespace Tchat
                 }
             }
             // Initialize the images of the differents tabs
-            string[] arrayImg = FrmLog.Client.GetUserImagesIdByUsername(FrmLog.Username);
-            string idAvatar = arrayImg[0];
-            string idBackground = arrayImg[1];
+            string[] arrayImg = Client.GetUserImagesIdByUsername(Username);
+            string idAvatar = null;
+            string idBackground = null;
             Image imgAvatar = null;
             Image imgBackground = null;
+
+            idAvatar = arrayImg[0];
+            idBackground = arrayImg[1];
             
             // Show avatar and background images
-            if (idAvatar != null)
+            if (idAvatar != null && idAvatar != "0")
             {
-                imgAvatar = FrmLog.Client.GetImageById(idAvatar);
+                imgAvatar = Client.GetImageById(idAvatar);
             }
-            if (idBackground != null)
+            else
             {
-                imgBackground = FrmLog.Client.GetImageById(idBackground);
+                imgAvatar = Properties.Resources.default_avatar;
+            }
+            if (idBackground != null && idBackground != "0")
+            {
+                imgBackground = Client.GetImageById(idBackground);
             }
 
             InitPictureBox(pbxAvatar, imgAvatar, pbxBackground, imgBackground);
             
             // Initialize the profil of the user
-            Dictionary<string, string> profil = FrmLog.Client.GetProfilByUsername(FrmLog.Username);// Recovers the profil of the user
-            InitProfil(pbxAvatar2, imgAvatar, pbxBackground2, imgBackground, lblUsername, FrmLog.Username, rtbDescription, profil["description"], tbxEmail, profil["email"], tbxPhone, profil["phone"], dgvHobbies, profil["hobbies"]);
+            Dictionary<string, string> profil = Client.GetProfilByUsername(Username);// Recovers the profil of the user
+            InitProfil(pbxAvatar2, imgAvatar, pbxBackground2, imgBackground, lblUsername, Username, rtbDescription, profil["description"], tbxEmail, profil["email"], tbxPhone, profil["phone"], dgvHobbies, profil["hobbies"]);
 
-            lblHome.Text = "Bienvenue " + FrmLog.Username + " !";
+            lblHome.Text = "Bienvenue " + Username + " !";
             // Management of the transparency of components
             lblHome.Parent = pbxBackground;
             lnkEditProfil.Parent = pbxBackground;
@@ -129,16 +200,16 @@ namespace Tchat
             Placeholder phSearchRooms = new Placeholder(tbxSearchRoom, PLACEHOLDER_SEARCH_ROOMS);
             
             // Management of the friends list
-            FriendsList = FrmLog.Client.GetFriendsListByUserId(FrmLog.Client.GetUserIdByUsername(FrmLog.Username));
+            FriendsList = Client.GetFriendsListByUserId(Client.GetUserIdByUsername(Username));
             // REMARK : Création de la liste d'ami non satisfaisante (faut-il revoir l'interface ?)
             foreach (string[] friend in FriendsList)
             {
-                Image friendAvatar = FrmLog.Client.GetFriendAvatarById(friend[0]); // Recovers the avatar of our friend
+                Image friendAvatar = Client.GetFriendAvatarById(friend[0]); // Recovers the avatar of our friend
                 // Creation of a row and data filling
                 DataGridViewRow row = new DataGridViewRow();
                 row.CreateCells(dgvFriendsList); // Don't forget to create cells !
                 row.Cells[0].Value = friendAvatar; // Add the image
-                row.Cells[1].Value = FrmLog.Client.GetUsernameByUserId(friend[0]); // Add the name of our friend
+                row.Cells[1].Value = Client.GetUsernameByUserId(friend[0]); // Add the name of our friend
                 row.Cells[2].Value = friend[1]; // Add the message
 
                 dgvFriendsList.Rows.Add(row); // Add the row completed
@@ -152,25 +223,37 @@ namespace Tchat
         private void FrmHome_FormClosing(object sender, FormClosingEventArgs e)
         {
             //TODO : Proposer à l'utilisateur de soit se déconnecter, soit de fermer totalement l'application
+            FrmDisconnect disconnect = new FrmDisconnect(MessageBoxIcon.Warning);
+            
+            DialogResult dr = disconnect.ShowDialog();
 
-            DialogResult dr = MessageBox.Show("Êtes-vous sûr de vouloir quitter My TchatRoom ?" + Environment.NewLine + "Vous serez déconnecté.", "Confirmation", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
-
-            if (dr == DialogResult.OK)
+            if (dr == DialogResult.Yes)
             {
-                FrmLog.Client.UpdateStatutOfUser(FrmLogin.OFFLINE, FrmLog.Username); // Disconnect the user
+                Client.UpdateStatutOfUser(OFFLINE, Username); // Disconnect the user
+            }
+            else if (dr == DialogResult.Cancel)
+            {
+                e.Cancel = true; // Cancel the closure
             }
             else
             {
-                e.Cancel = true; // Cancel the closure
+                ExitApp = true; // We will quit the app when this form will be closed
             }
         }
 
         /// <summary>
-        /// Redisplay the windows of login when we close the home windows
+        /// Redisplay the windows of login when we close the home window or exit the app
         /// </summary>
         private void FrmHome_FormClosed(object sender, FormClosedEventArgs e)
         {
-            FrmLog.Show();
+            if (!ExitApp)
+            {
+                FrmLogin.Show(); // Show the login window
+            }
+            else
+            {
+                Application.Exit();
+            }
         }
         #endregion FrmHomeEvents
 
@@ -198,19 +281,19 @@ namespace Tchat
             switch (btn.Name)
             {
                 case "btnOnline":
-                    statut = FrmLogin.ONLINE;
+                    statut = ONLINE;
                     btnStatutAvatar.BackColor = Color.YellowGreen;
                     break;
                 case "btnAbsent":
-                    statut = FrmLogin.ABSENT;
+                    statut = ABSENT;
                     btnStatutAvatar.BackColor = Color.Orange;
                     break;
                 case "btnDoNotDisturb":
-                    statut = FrmLogin.DO_NOT_DISTURB;
+                    statut = DO_NOT_DISTURB;
                     btnStatutAvatar.BackColor = Color.Red;
                     break;
                 case "btnInvisible":
-                    statut = FrmLogin.INVISIBLE;
+                    statut = INVISIBLE;
                     btnStatutAvatar.BackColor = Color.Gray;
                     break;
                 default:
@@ -218,7 +301,7 @@ namespace Tchat
                     break;
             }
             // Update the statut
-            FrmLog.Client.UpdateStatutOfUser(statut, FrmLog.Username);
+            Client.UpdateStatutOfUser(statut, Username);
         }
         #endregion UserStatus
 
@@ -292,7 +375,7 @@ namespace Tchat
         /// </summary>
         /// <param name="inEdit">If true the mode is enabled, else he is disabled</param>
         private void EditMode(bool inEdit)
-        {// TODO : je me suis arrêter par ici
+        {
             // Management of the visibility of the non dynamic fields
             #region ControlsVisibility
             lblPwd.Visible = !lblPwd.Visible;
@@ -309,7 +392,7 @@ namespace Tchat
 
             if (inEdit) // Edition mode ON
             {
-                // On gère la visibilité des liens avec des valeures fixe pour éviter un bug when we added/removed a tab
+                // We manage the visibility of links with fix value for avoid a bug when we added/removed a tab
                 lnkEditProfil.Visible = false; 
                 lnkEditProfil2.Visible = false;
                 
@@ -318,21 +401,20 @@ namespace Tchat
                 tcWindows.TabPages.Remove(tpFriends);
                 tcWindows.TabPages.Remove(tpRooms);
                 tcWindows.TabPages.Remove(tpSettings);
-                
+
                 // Recovers the password of the user and show it on the textbox
-                tbxPwd.Text = _requestsSQL.GetUserPasswordByUsername(FrmLog.Username);
+                tbxPwd.Text = Password;
                 
                 // We add buttons that allow to edit the differents informations of the user
                 Design.AddEditButtonForControl(tbxPwd, gbxInformation, "BtnPwd", "Wingdings", "!", BtnPwd_Click, EDIT_TAG);
                 BtnNewHobbies = Design.AddEditButtonForControl(tbxNewHobbie, gbxInformation, "BtnNewHobbie", "Wingdings 2", "Ì", BtnNewHobbie_Click, EDIT_TAG);
                 BtnNewHobbies.Enabled = false;
-
-                // On ajoute la colonne des boutons
+                
                 // We add the button column
                 if (!dgvHobbies.Columns.Contains("ColumnButton"))
                     dgvHobbies.Columns.Add(ColumnButton);
 
-                // TODO : Bordure en traitillé pour l'avatar
+                // TODO : Lined border for the avatar
                 //_rePaint = true;
                 //pbxAvatar2.Refresh();
                 
@@ -345,7 +427,7 @@ namespace Tchat
             }
             else // Edition mode OFF
             {
-                // On gère la visibilité des liens avec des valeures fixe pour éviter un bug when we added/removed a tab
+                // We manage the visibility of links with fix value for avoid a bug when we added / removed a tab
                 lnkEditProfil.Visible = true;
                 lnkEditProfil2.Visible = true;
 
@@ -362,92 +444,97 @@ namespace Tchat
                 tcWindows.TabPages.Add(tpSettings);
                 #endregion TabPages
 
-                DisposeEditsControls(); // Supprime les composants dynamiques de l'édition
-
-                string hobbies = _requestsSQL.GetUserHobbiesByUsername(FrmLog.Username);
-                UpdateHobbies(dgvHobbies, hobbies); // Met à jour le DataGridView des hobbies
-
-                // On (ré)affiche la bonne image pour si jamais l'utilisateur avait annulé sa modification du profil
-                // TODO : les images sont mal enregistrer (en local)
+                DisposeEditsControls(); // Removes the dynamic components of the edition
+                
+                string hobbies = Client.GetHobbiesOfUser(Username);
+                UpdateHobbies(dgvHobbies, hobbies); // Update the DataGridView with hobbies
+                
+                // (Re)Display the images for when the user cancel the modification of his profil
                 pbxAvatar2.Image = ImgAvatar;
                 pbxBackground2.Image = ImgBackground;
 
                 pbxAvatar2.Cursor = Cursors.Arrow;
                 pbxBackground2.Cursor = Cursors.Arrow;
+
+                // Hide the confirm password
+                tbxPwdConfirm.Visible = false;
+                lblPwdConfirm.Visible = false;
             }
             InEdit = inEdit;
         }
 
         /// <summary>
-        /// Met à jour le DataGridView des hobbies reçus en paramètres
+        /// Update the DataGridView with the hobbies received in parameters
         /// </summary>
-        /// <param name="hobbies">Le DataGridView qui doit être mis à jour</param>
-        /// <param name="userHobbies">Chaîne qui contient les hobbies de l'utilisateur, séparé par des points virgules (;)</param>
+        /// <param name="hobbies">The DataGridView who has to be update</param>
+        /// <param name="userHobbies">String who contains the centers of interests of the user, separated by semicolon (;)</param>
         private void UpdateHobbies(DataGridView hobbies, string userHobbies)
         {
-            dgvHobbies.Rows.Clear(); // Efface les précédentes données
+            dgvHobbies.Rows.Clear(); // Delete old data
 
             if (userHobbies != null ||userHobbies == String.Empty)
             {
-                // Crée un tableau qui contient les centres d'intérêt, séparé par des points virgules
+                // Create an array who contains the centers of interests of the user, separated by semicolon
                 string[] arrHobbies = userHobbies.Split(';');
-                // On ajoute chaque hobby du tableau dans notre DataGridView
+
+                // Add each hobby in our DataGridView
                 foreach (string hobby in arrHobbies)
                 {
                     dgvHobbies.Rows.Add(hobby);
                 }
-                dgvHobbies.Columns.Remove("ColumnButton"); // On retire la colonne des boutons
+                dgvHobbies.Columns.Remove("ColumnButton"); // Remove the buttons column
             }
            
         }
 
         /// <summary>
-        /// Active l'édition du mot de passe
+        /// Enabled the edition of the password
         /// </summary>
         private void BtnPwd_Click(object sender, EventArgs e)
         {
-            PwdHasChange = true; // à faire au tout début pour éviter tout problème avec le TextChange
+            PwdHasChange = true; // To do at the beginning for avoid any problem with the TextChange event
 
-            // Récupère le bouton et le rend invisible
+            // Recup the button and makes it invisible
             Button btn = (Button)sender;
             btn.Visible = false;
             
-            tbxPwd.ReadOnly = false; // Active l'édition du champs
-            tbxPwd.Text = String.Empty; // Efface la TextBox pour ne pas garder le mdp encrypter qui s'y trouvait
-
-            // Affiche le Label et la TextBox de confirmation
+            tbxPwd.ReadOnly = false; // Enable the edition of the field
+            tbxPwd.Text = String.Empty; // Clear the TextBox to not keep the old password
+            
+            // Show Label and TextBox of confirmation
             tbxPwdConfirm.Visible = true;
             lblPwdConfirm.Visible = true;
-
-            // Ajoute un bouton qui permet d'annuler la modification du mot de passe
+            
+            // Add a button which allows to cancel the modification of the password
             Design.AddEditButtonForControl(tbxPwdConfirm, gbxInformation, "BtnPwdConfirm", "Wingdings 2", "Ò", BtnPwdConfirm_Click, EDIT_TAG);
         }
 
         /// <summary>
-        /// Annule la modification du mot de passe
+        /// Cancel the edition of the password 
         /// </summary>
         private void BtnPwdConfirm_Click(object sender, EventArgs e)
         {
-            PwdHasChange = false; // à faire au tout début pour éviter tout problème avec le TextChange
-
-            // Récupère le bouton et le rend invisible
+            PwdHasChange = false; // To do at the beginning for avoid any problem with the TextChange event
+            
+            // Recup the button and makes it invisible
             Button btn = (Button)sender;
             btn.Visible = false;
 
-            tbxPwd.ReadOnly = true; // Désactive l'édition du champs
-            
-            tbxPwdConfirm.Text = String.Empty;
-            // On récupère le mot de passe de l'utilisateur et on l'affiche dans le textbox
-            tbxPwd.Text = _requestsSQL.GetUserPasswordByUsername(FrmLog.Username);
+            tbxPwd.ReadOnly = true; // Disabled the edition of the field
 
-            // Gestion de l'affichage
+            tbxPwdConfirm.Text = String.Empty; // Clear the field of confirmation
+
+            // Recovers the password of the user and show it on the textbox
+            tbxPwd.Text = Password;
+            
+            // Management of the visibility
             tbxPwdConfirm.Visible = false;
             lblPwdConfirm.Visible = false;
-            gbxInformation.Controls.Find("BtnPwd", false)[0].Visible = true; // Récupère le bouton qui active l'edition du mot de passe et l'affiche
+            gbxInformation.Controls.Find("BtnPwd", false)[0].Visible = true; // Recovers the button who enable the edition of the password and show it
         }
 
         /// <summary>
-        /// Ajoute un nouveau centre d'intérêt dans la liste après un clique sur le bouton
+        /// Call the method who add a new center of interest in the list after a click
         /// </summary>
         private void BtnNewHobbie_Click(object sender, EventArgs e)
         {
@@ -455,31 +542,32 @@ namespace Tchat
         }
 
         /// <summary>
-        /// Ajoute un nouveau centre d'intérêt dans la liste
+        /// Add a new center of interest in the list
         /// </summary>
         private void AddNewHobbie()
         {
             if (tbxNewHobbie.Text != "")
             {
-                dgvHobbies.Rows.Add(tbxNewHobbie.Text.Trim()); // Ajoute le nouveau centre d'intérêt dans le DataGridView
-                tbxNewHobbie.Text = String.Empty; // Vide le TextBox
+                dgvHobbies.Rows.Add(tbxNewHobbie.Text.Trim()); // Add a new center of interest in the DataGridView
+                tbxNewHobbie.Text = String.Empty; // Clear the TextBox
             }
         }
 
         /// <summary>
-        /// Supprime le centre d'intérêt lorsque l'utilisateur clique sur la ligne du DataGridView correspondante.
+        /// Delete a center of interest
         /// </summary>
         private void dgvHobbies_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            // Si la colonne des boutons est présente ET si c'est elle qui vient d'être cliquée correspond à celle des boutons...
+            // If the button column is present AND if it is she who has just been clicked corresponds to the button column...
+
             if (dgvHobbies.Columns.Contains("ColumnButton") && e.ColumnIndex == dgvHobbies.Columns["ColumnButton"].Index)
             {
-                dgvHobbies.Rows.RemoveAt(e.RowIndex); // ... alors on supprime la ligne
+                dgvHobbies.Rows.RemoveAt(e.RowIndex); // ... then we delete the row
             }
         }
 
         /// <summary>
-        /// Charge une image pour les pictures box
+        /// Load an image for the PictureBox
         /// </summary>
         private void pbxAvatar2_Click(object sender, EventArgs e)
         {
@@ -492,15 +580,14 @@ namespace Tchat
 
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
-                    Bitmap btp = new Bitmap(ofd.FileName); // Crée un bitmap à partir du nom du fichier choisi
-                    pbx.Image = btp; // On change l'image du pbx avec le bitmap
-                    pbx.Tag = btp.RawFormat; // Stocke le format de l'image dans le Tag pour plus tard
+                    Bitmap btp = new Bitmap(ofd.FileName); // Create a bitmap from the file name
+                    pbx.Image = btp; // Change the image of the picturebox with the bitmap
 
-                    // Note : ne pas utiliser pbx.ImageLocation pour changer l'image !
-                    // L'image "visuel" du picturebox changerait bel et bien mais cela ne change pas le contenu de pbx.Image
-                    // ce qui rendrait la récupération de l'image plus "complexe"
-
-                    // On indique qu'un picturebox a changé d'image
+                    // Note : Don't use pbx.ImageLocation for changing the image !
+                    // The "visual" image would change but it does not change the content of pbx.Image
+                    // which would make the recovery of the image more "complex"
+                    
+                    // We indicate that a PictureBox has change his image
                     if (pbx.Name == pbxAvatar2.Name)
                         AvatarHasChange = true;
                     else
@@ -512,22 +599,22 @@ namespace Tchat
         #endregion MethodsEdit
         #region StateEdit
         /// <summary>
-        /// Désactive le changement de TabPage lorsqu'on est en édition
+        /// Disabled the changement of TabPage when we are in edition mode
         /// </summary>
         private void tcWindows_Selecting(object sender, TabControlCancelEventArgs e)
         {
             // NOTE :
-            // Le code ci-dessous n'est plus nécessaire car on supprime les TabPages (onglets) "inutiles" lorsqu'on est en mode d'édition
-            // Une alternative serait que si on décide de ne pas retirer les onglets on pourrait alors
-            // prévenir l'utilisateur avec un message lui indiquant qu'il ne peut pas changer d'onglet en mode édition
-
-            // On désactive le changement d'onglet lorsqu'on est en mode d'édition
+            // The code below is no longer necessary because we delete the TabPages (tabs) "useless" when we are in edition mode
+            // An alternative would be if we decide not to remove the tabs, we could then
+            // notify the user with a message that they can not change tabs in edit mode
+            
+            // Deactivates the changement of tab when we are in edition mode
             if (InEdit) 
                 e.Cancel = true; 
         }
 
         /// <summary>
-        /// Active le mode édition du profil de l'utilisateur
+        /// Enable the edition mode
         /// </summary>
         private void lnkEditProfil_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
@@ -535,13 +622,13 @@ namespace Tchat
         }
 
         /// <summary>
-        /// Sauvegarde ou annule l'edition du profil
+        /// Save or cancel the edition of the profil
         /// </summary>
         private void btnSave_Click(object sender, EventArgs e)
         {
             Button btn = (Button)sender;
 
-            if (btn == btnSave) // Sauvegarde des modifications
+            if (btn == btnSave) // Saving the modifications
             {
                 string idAvatar = null;
                 string idBackground = null;
@@ -549,20 +636,19 @@ namespace Tchat
                 string password = tbxPwd.Text;
                 string email = tbxEmail.Text;
                 string phone = tbxPhone.Text;
-                string hobbies = ""; // Chaîne qui stockera nos hobbies, ils seront séparé par des points virgules (;)
+                string hobbies = ""; // String that will store our hobbies, they will be separated by semicolons (;)
 
-                // Parcour chaque ligne de notre DataGridView qui contient nos centres d'intérêt
                 foreach (DataGridViewRow rowHobby in dgvHobbies.Rows)
                 {
-                    // Ajoute la Value de la première cellule de notre ligne ainsi qu'un point de virgule dans notre chaîne d'hobbies
+                    // Add the value of the first cell of our row as well as a semicolons in our string of hobbies
                     hobbies += rowHobby.Cells[0].Value + ";"; 
                 }
                 if (hobbies.Length != 0)
-                    hobbies = hobbies.Remove(hobbies.Length - 1); // Supprime le dernier point virgule 
+                    hobbies = hobbies.Remove(hobbies.Length - 1); // Delete the last semicolons
                 else
-                    hobbies = null; // On met null si il n'y a pas d'hobby pour pas en avoir 1 "vide"/"sans nom"
-
-                // Mise à jours des images de profil et de fond
+                    hobbies = null; // Set the string to null if there is not hobbies
+                
+                // Update the avatar and backgroud images
                 if (AvatarHasChange)
                 {
                     idAvatar = ManagesPicturebox(pbxAvatar2, COLUMN_AVATAR);
@@ -571,20 +657,21 @@ namespace Tchat
                 {
                     idBackground = ManagesPicturebox(pbxBackground2, COLUMN_BACKGROUD);
                 }
-
-                // Mise à jour du profil
-                _requestsSQL.UpdateProfilUser(FrmLog.Username, email, phone, description, hobbies);
-
-                // On modifie le mdp de l'utilisateur si il a changés
+                
+                // Update the profil
+                Client.UpdateProfilUser(Username, email, phone, description, hobbies);
+                
+                // We change the password if it has been changed
                 if (PwdHasChange)
                 {
-                    _requestsSQL.UpdatePasswordUser(FrmLog.Username, password);
+                    Client.UpdatePasswordOfUser(Username, password);
+                    Password = password;
                     PwdHasChange = false;
                 }
 
                 EditMode(false);
             }
-            else // Annulation des modifications
+            else // Cancel the modifications
             {
                 DialogResult dr = MessageBox.Show("Souhaitez-vous vraiment annuler ? \nToutes les modifications non enregistrées seront perdues !", "Annuler la modification du profil ?", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning);
                 if (dr == DialogResult.OK)
@@ -593,87 +680,84 @@ namespace Tchat
                 }
             }
         }
-
         /// <summary>
-        /// Ajoute une nouvelle image dans la base et met à jour celle du PictureBox de l'onglet accueil ainsi que les données associées au type d'image
+        /// Add a new image to the database and update the image of the PictureBox of the home tab, as weel as the data associate of the image type
         /// </summary>
-        /// <param name="pbx">Le PictureBox de l'onglet profil qui contient la nouvelle image</param>
-        /// <param name="columnImg">La colonne de l'image dans la base</param>
-        /// <returns>Retourne l'ID de notre nouvelle image</returns>
+        /// <param name="pbx">The PictureBox of the tab profil who will contains the new image</param>
+        /// <param name="columnImg">The column of the image in the database</param>
+        /// <returns>Return the ID of our new image</returns>
         private string ManagesPicturebox(PictureBox pbx, string columnImg)
         {
             Image img = pbx.Image;
-            ImageFormat imgFormat = (ImageFormat)pbx.Tag;
-            string idImg = _requestsSQL.InsertImage(img, imgFormat); // Ajoute l'image dans la base et récupère son ID
+            string idImg = Client.InsertImage(img);
 
-            // Effectue les traitements propres au type d'image reçu
+            // Performs the own processing for the type of image received
             switch (columnImg)
             {
-                case "avatar":
-                    pbxAvatar.Image = img; // Change l'image du PictureBox dans l'onglet Accueil
-                    ImgAvatar = img; // Stocke l'image
+                case "AVATAR_ID":
+                    pbxAvatar.Image = img; // Change the avatar image of the tab home
+                    ImgAvatar = img; // Save the image
+                    AvatarHasChange = false;
                     break;
-                case "background":
-                    pbxBackground.Image = img; // Change l'image du PictureBox dans l'onglet Accueil
-                    ImgBackground = img; // Stocke l'image
+                case "BACKGROUND_ID":
+                    pbxBackground.Image = img; // Change the background image of the tab home
+                    ImgBackground = img; // Save the image
+                    BackgroundHasChange = false;
                     break;
                 default:
                     Console.WriteLine("Paramètre inconnu reçu lors de l'exécution de la methode UpdatePictureBox");
                     break;
             }
-            // Met à jour l'ID de l'avatar de l'utilisateur
-            _requestsSQL.UpdateIdImageOfUser(FrmLog.Username, columnImg, idImg);
+            // Update the id of the avatar of the user
+            Client.UpdateIdImageOfUser(Username, columnImg, idImg);
 
-            return idImg; // Retourne l'ID de l'image que l'on vient d'ajouter
+            return idImg;
         }
 
         /// <summary>
-        /// Supprime tout les contrôle dynamiques du mode d'édition
+        /// Removes all dynamic controls from the edit mode
         /// </summary>
         public void DisposeEditsControls()
         {
-            List<Control> listCtrl = new List<Control>(); // contiendra les contrôles à supprimer
-
-            // Parcour chaque contrôle du groupbox des 
+            List<Control> listCtrl = new List<Control>(); // Will contain the controls to delete
+            
             foreach (Control control in gbxInformation.Controls)
             {
-                // Il faut faire un cast du Tag au lieu d'un .toString() pour éviter un crash si le tag est null
+                // We have to do a cast of the tag instead of an .toString() to avoid a crash if the tag is null
                 if ((string)control.Tag == EDIT_TAG)
                 {
-                    listCtrl.Add(control); // On ajoute le contrôle dans la liste si les tags correspondent
+                    listCtrl.Add(control); // Add the control to the list if the tags match
 
                     /* Note : 
-                     *          On ne supprime pas les contrôles ici 
-                     *          car l'index que parcourerait le foreach serait indirectement modifier
-                     *          se qui pourrait empêcher certains contrôles d'être parcouru (et donc supprimer)
+                     *          We don't delete the controls here
+                     *          because the index of the foreach would be indirectly modified
+                     *          which could prevent certain controls from being traveled (and therefore deleted)
                      */
                 }
             }
 
             foreach (Control ctrl in listCtrl)
             {
-                // On supprime les contrôles de l'édition depuis la liste pour être sûr de bien tous les supprimer
+                // Editing controls are removed from this list to make sure you delete all the controls
                 gbxInformation.Controls.Remove(ctrl); 
             }
             
         }
 
         /// <summary>
-        /// Active ou désactive le bouton d'enregistrement de l'édition après avoir vérifier que les mots de passe sont identique ou qu'il n'a pas changé
+        /// Enable or disable the edit record button after verifying that the passwords are the same or have not changed
         /// </summary>
         private void tbxPwd_TextChanged(object sender, EventArgs e)
         {
-            // Si la confirmation du mdp est identique au mdp et si la longueur du mdp est > à 0
-            // Ou si le mot de passe n'a pas changer
-            // Alors on active le bouton d'enregistrement
+            // If the password confirm is identical to the passwaord, and if the lenght of the password is > at 0
+            // Or if the password hasn't changed
             if ((tbxPwd.Text == tbxPwdConfirm.Text && tbxPwd.Text.Length > 0) || (PwdHasChange == false))
             {
-                btnSave.Enabled = true;
+                btnSave.Enabled = true; // Then we enable the edit record button
             }
             else
             {
-                // Sinon on le désactive
-                btnSave.Enabled = false;
+                btnSave.Enabled = false; // Else we disable it
             }
         }
         #endregion StateEdit
@@ -683,11 +767,11 @@ namespace Tchat
         #region TextboxPlaceholder
 
         /// <summary>
-        /// (Dé)active le bouton d'ajout d'hobby lorsque le texte change
+        /// Enaled or disabled the add button of hobbies when the text change
         /// </summary>
         private void tbxNewHobbie_TextChanged(object sender, EventArgs e)
         {
-            // Active ou désactive le bouton d'ajout
+            // Enaled or disabled the add button
             if (String.IsNullOrWhiteSpace(tbxNewHobbie.Text))
                 BtnNewHobbies.Enabled = false;
             else
@@ -695,12 +779,12 @@ namespace Tchat
         }
 
         /// <summary>
-        /// Désactive le bouton d'ajout d'hobby lorsque le textbox perd le focus
+        /// Disabled the add button of hobbies when the textbox loses the focus
         /// </summary>
         private void TbxNewHobbie_LostFocus(object sender, EventArgs e)
         {
-            // Désactive le bouton d'ajout d'hobby si le textbox est vide (ou remplit d'espaces blancs)
-            // On test si le texte correspond à celui du placeholder pour être sûr de désactiver le bouton même si l'event se produit trop tard
+            // Disabled the add button of hobbies if the textbox is empty (or filled with whit spaces)
+            // We test if the text correspond to the placeholder to be sure to disabled the button even if the event occurs too late
             if (String.IsNullOrWhiteSpace(tbxNewHobbie.Text) || tbxNewHobbie.Text == PLACEHOLDER_HOBBIES)
             {
                 BtnNewHobbies.Enabled = false;
@@ -710,37 +794,49 @@ namespace Tchat
         #endregion TextboxPlaceholder
 
         /// <summary>
-        /// Affichage de l'heure actuel
+        /// Show the actual hour
         /// </summary>
         private void tmrDate_Tick(object sender, EventArgs e)
         {
             DateTime dt = new DateTime();
             dt = DateTime.Now;
-            tsDate.Text = dt.ToString("dddd d MMMM yyyy - HH:m"); // ex : mercredi 11 octobre 2017 - 12:01
+            tsDate.Text = dt.ToString("dddd d MMMM yyyy - HH:mm"); // ex : mercredi 11 octobre 2017 - 12:01
+
+            if (Client.ClientSocket.Connected)
+            {
+                tsConnected.Text = "Connecté au serveur";
+                tsConnected.ForeColor = Color.Green;
+            }
+            else
+            {
+                tsConnected.Text = "Déconnecté au serveur !";
+                tsConnected.ForeColor = Color.Red;
+                tmrTryConnect.Enabled = true;
+            }
         }
 
         /// <summary>
-        /// Filtrage des caractères
+        /// Character filtering
         /// </summary>
         private void tbxNewHobbie_KeyPress(object sender, KeyPressEventArgs e)
         {
-            // Si l'utilisateur appuie sur Enter ET si le centre d'intérêt n'est pas vide
+            // If the user press enter AND if the center of interest isn't empty
             if (e.KeyChar == (char)13 && tbxNewHobbie.Text != "")
-                AddNewHobbie(); // Alors il ajoute le nouveau centre d'intérêt
-
-            // N'autorise que les lettres et touche de controle
+                AddNewHobbie(); // Then we add the new center of interest
+            
+            // Only letters and controls authorized
             if ((!char.IsLetter(e.KeyChar)) && (!char.IsControl(e.KeyChar)) && e.KeyChar == (char)20)
                 e.Handled = true;
         }
 
         /// <summary>
-        /// Redessine une PictureBox avec une bordure en traitillé (dashed)
+        /// Redraw a PictureBox with a dashed border
         /// </summary>
-        /// <param name="sender">Le PictureBox qui a appelé la méthode</param>
-        /// <param name="e">Les données de l'événément du PictureBox</param>
+        /// <param name="sender">The PictureBox that have called the method</param>
+        /// <param name="e">The data of the events of the PictureBox</param>
         private void PaintPictureBox(object sender, PaintEventArgs e)
         {
-            // Si il s'agit d'un Paint "manuelle"
+            // We redraw the PictureBox only if this is a "manual" paint
             if (RePaint)
             {
                 PictureBox pbx = (PictureBox)sender;
@@ -754,31 +850,31 @@ namespace Tchat
         #region FriendsManagement
 
         /// <summary>
-        /// Ouvre la fenêtre de requête d'amitié (FrmFriendInvitation)
+        /// Open the windows of the friendship request (FrmFriendInvitation)
         /// </summary>
         private void btnAddFriend_Click(object sender, EventArgs e)
         {
-            FrmFriendInvitation frmFriendInvitation = new FrmFriendInvitation(FrmLog, _requestsSQL);
+            FrmFriendInvitation frmFriendInvitation = new FrmFriendInvitation(Client, Username);
             frmFriendInvitation.ShowDialog();
 
             if (frmFriendInvitation.DialogResult == DialogResult.OK)
             {
-                // On récupère les ID des utilisateurs
-                string idUserSender = _requestsSQL.GetUserIdByUsername(FrmLog.Username);
-                string idUserReceiver = _requestsSQL.GetUserIdByUsername(frmFriendInvitation.FriendRequest);
+                // Recovers the id of the users
+                string idUserSender = Client.GetUserIdByUsername(Username);
+                string idUserReceiver = Client.GetUserIdByUsername(frmFriendInvitation.FriendName);
 
                 string messageRequest = frmFriendInvitation.MessageRequest;
 
-                // Test si l'utilisateur à qui on s'aprête à envoyé une demande d'amitié ne nous aurait il pas déjà envoyé une demande.
-                if (_requestsSQL.CheckIfFriendRequestAlreadyExist(idUserSender, idUserReceiver))
+                // Test if the user to whom we are about to send a request for friendship would not have already sent us a request
+                if (Client.CheckIfFriendRequestAlreadyExist(idUserSender, idUserReceiver))
                 {
-                    MessageBox.Show("Vous avez déjà reçu une demande d'amitié de la part de " + frmFriendInvitation.FriendRequest + ".\n\nSouhaitez-vous l'acceptez maintenant (en cas de refus elle restera \"en attente\") ?", "Demande d'amitié en attente", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                    MessageBox.Show("Vous avez déjà reçu une demande d'amitié de la part de " + frmFriendInvitation.FriendName + ".\n\nSouhaitez-vous l'acceptez maintenant (en cas de refus elle restera \"en attente\") ?", "Demande d'amitié en attente", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
                     // TODO : Permettre à l'utilisateur d'accepter une demande d'amitié si il y en a une déjà en cours
                 }
-                else if (_requestsSQL.CreateFriendRequest(idUserSender, idUserReceiver, messageRequest))
+                else if (Client.CreateFriendRequest(idUserSender, idUserReceiver, messageRequest))
                 {
-                    MessageBox.Show("Une demande d'amitié a été envoyé à " + frmFriendInvitation.FriendRequest, "Demande d'amitié envoyé", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Une demande d'amitié a été envoyé à " + frmFriendInvitation.FriendName, "Demande d'amitié envoyé", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 else
                 {
@@ -793,10 +889,26 @@ namespace Tchat
 
         private void tbxMessage_KeyPress(object sender, KeyPressEventArgs e)
         {
-            if (e.KeyChar == (char)13)
+            if (e.KeyChar == (char)13 && !String.IsNullOrWhiteSpace(tbxMessage.Text))
             {
+                // Add the message to the RichTextBox when the user press enter
                 rtbConversation.Text += tbxMessage.Text + Environment.NewLine;
                 tbxMessage.Text = String.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Try to connect the user to the server
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void tmrTryConnect_Tick(object sender, EventArgs e)
+        {
+            Client = new ClientTchat(); // Try to connect the client to the server
+
+            if (Client.ClientSocket.Connected)
+            {
+                tmrTryConnect.Enabled = false;
             }
         }
     }

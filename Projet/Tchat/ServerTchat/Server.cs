@@ -2,7 +2,7 @@
  * Description : Chat server application console for the project "Tchat"
  * Class : Server - Manage the chat server (connection and data)
  * Author : GENGA Dario
- * Last update : 2017.12.14 (yyyy-MM-dd)
+ * Last update : 2017.12.17 (yyyy-MM-dd)
  */
 using System;
 using System.IO;
@@ -18,18 +18,19 @@ namespace ServerTchat
     /// Manage the chat server (connection and data)
     /// </summary>
     class Server
-    {
+    {//TODO : prevent all client when we the server is disconnected
         private ManualResetEvent _connectDone = new ManualResetEvent(false);
         #region Database        
         private DatabaseConnection _dbConnect;
         private RequestsSQL _requestsSQL;
         public const string SERVER = "localhost";
+        public const string PORT = "3306";
         public const string DATABASE = "mytchatroomdb";
         public const string USER = "admin";
         public const string PASSWORD = "8185c8ac4656219f4aa5541915079f7b3743e1b5f48bacfcc3386af016b55320";
         #endregion Database
         private ServerRequest _svRequest;
-        private const int PORT = 3001; // Port of the server
+        private const int APP_PORT = 3001; // Port of the app server
         private const int BACKLOG = 100; // The maximum length of the pending connections queue.
 
         /// <summary>
@@ -37,7 +38,7 @@ namespace ServerTchat
         /// </summary>
         public Server()
         {
-            DbConnect = new DatabaseConnection(SERVER, DATABASE, USER, PASSWORD);
+            DbConnect = new DatabaseConnection(SERVER, PORT, DATABASE, USER, PASSWORD);
             RequestsSQL = new RequestsSQL(DbConnect.Connection);
             SvRequest = new ServerRequest(RequestsSQL);
             Start();
@@ -87,7 +88,7 @@ namespace ServerTchat
         private void Start()
         {
             IPAddress ipAddress = IPAddress.Parse(GetLocalIPAddress()); // Local IP of the server
-            IPEndPoint localEndPoint = new IPEndPoint(ipAddress, PORT); // Local endpoint of the server
+            IPEndPoint localEndPoint = new IPEndPoint(ipAddress, APP_PORT); // Local endpoint of the server
 
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp); // Create a TCP/IP socket
 
@@ -175,6 +176,12 @@ namespace ServerTchat
                     case "/GetUserId":
                         SvRequest.CommandGetUserIdByUsername(handler, receivedData);
                         break;
+                    case "/GetPassword":
+                        SvRequest.CommandGetUserPasswordByUsername(handler, receivedData);
+                        break;
+                    case "/GetHobbies":
+                        SvRequest.CommandGetUserHobbiesByUsername(handler, receivedData);
+                        break;
                     case "/GetUserImagesId":
                         SvRequest.CommandGetUserImagesIdByUsername(handler, receivedData);
                         break;
@@ -192,6 +199,30 @@ namespace ServerTchat
                         break;
                     case "/UpdateStatut":
                         SvRequest.CommandUpdateStatut(handler, receivedData);
+                        break;
+                    case "/UpdateProfil":
+                        SvRequest.CommandUpdateProfil(handler, receivedData);
+                        break;
+                    case "/UpdatePassword":
+                        SvRequest.CommandUpdatePassword(handler, receivedData);
+                        break;
+                    case "/UpdateIdImage":
+                        SvRequest.CommandUpdateIdImageOfUser(handler, receivedData);
+                        break;
+                    case "/InsertImage":
+                        SvRequest.CommandInsertImage(handler, receivedData);
+                        break;
+                    case "/CheckUser":
+                        SvRequest.CommandCheckIfUserExist(handler, receivedData);
+                        break;
+                    case "/CheckFriendRequest":
+                        SvRequest.CommandCheckFriendRequest(handler, receivedData);
+                        break;  
+                    case "/CheckDuplicateFriendRequest":
+                        SvRequest.CommandCheckDuplicateFriendRequest(handler, receivedData);
+                        break;
+                    case "/CreateFriendRequest":
+                        SvRequest.CommandCreateFriendRequest(handler, receivedData);
                         break;
                     default:
                         Console.WriteLine("Unknown command");

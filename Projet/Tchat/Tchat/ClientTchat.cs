@@ -2,7 +2,7 @@
  * Description : Chat online in Windows Form C#. Users can chat privately or they can chat in groups in "rooms"
  * Class : ClientTchat - Manage the connection between the client and the server
  * Author : GENGA Dario
- * Last update : 2017.12.14 (yyyy-MM-dd)
+ * Last update : 2017.12.17 (yyyy-MM-dd)
  */
 using System;
 using System.Collections.Generic;
@@ -20,7 +20,7 @@ namespace Tchat
         private const string SERVER_HOSTNAME = "CFPI-R113PC12";
         private const int PORT = 3001;
 
-        private Socket _client;
+        private Socket _clientSocket;
         private ClientRequest _clRequest;
         private bool _connected = false;
         private bool _logged = false;
@@ -38,7 +38,7 @@ namespace Tchat
         /// <summary>
         /// The socket of the client
         /// </summary>
-        private Socket Client { get => _client; set => _client = value; }
+        public Socket ClientSocket { get => _clientSocket; set => _clientSocket = value; }
 
         /// <summary>
         /// The requests between the client and the server
@@ -86,11 +86,11 @@ namespace Tchat
                 IPAddress ipAddress = IPAddress.Parse(GetServerIpAdress(SERVER_HOSTNAME)); // Recup the ip address of the server
                 IPEndPoint remoteEP = new IPEndPoint(ipAddress, PORT);
                 
-                Client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp); // Create a TCP/IP socket
+                ClientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp); // Create a TCP/IP socket
 
-                Client.Connect(remoteEP); // Connect the Socket to the remote endpoint
+                ClientSocket.Connect(remoteEP); // Connect the Socket to the remote endpoint
 
-                ClRequest = new ClientRequest(Client); // Create the request for the client
+                ClRequest = new ClientRequest(ClientSocket); // Create the request for the client
 
                 Connected = true;
             }
@@ -116,7 +116,83 @@ namespace Tchat
                 Console.WriteLine("The socket must be connected to the server !");
             }
         }
-        
+
+        /// <summary>
+        /// Call the method that send a name to check if an user exist with this name
+        /// </summary>
+        /// <param name="username">The name of the user to check</param>
+        /// <returns>Return true if the user exist, else return false</returns>
+        public bool CheckIfUserExist(string username)
+        {
+            if (Connected)
+            {
+                return ClRequest.SendUsernameToCheckIfUserExist(username); // Save the result of the check
+            }
+            else
+            {
+                Console.WriteLine("The socket must be connected to the server !");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Call the method that send the ID of the user sender and the user receiver to check if they don't already have a friend request
+        /// </summary>
+        /// <param name="idUserSender">The id of the user who send the request</param>
+        /// <param name="idUserReceiver">The id of the user who recovers the request</param>
+        /// <returns>Return true if they are already a friend request, else return false</returns>
+        public bool CheckIfFriendRequestAlreadyExist(string idUserSender, string idUserReceiver)
+        {
+            if (Connected)
+            {
+                return ClRequest.SendIdUsersToCheckFriendRequest(idUserSender, idUserReceiver); // Save the result of the check
+            }
+            else
+            {
+                Console.WriteLine("The socket must be connected to the server !");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Call the method that send the name of the user sender and the user receiver to check if they aren't a duplicate friend request
+        /// </summary>
+        /// <param name="userSender">The name of the user who send the request</param>
+        /// <param name="userReceiver">The name of the user who recovers the request</param>
+        /// <returns>Return true if they are a duplicte friend request, else return false</returns>
+        public bool CheckDuplicateFriendRequest(string userSender, string userReceiver)
+        {
+            if (Connected)
+            {
+                return ClRequest.SendUsernamesToCheckDuplicateFriendRequest(userSender, userReceiver); // Save the result of the check
+            }
+            else
+            {
+                Console.WriteLine("The socket must be connected to the server !");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Call the method that send the ID of the user sender and the user receiver to create a friend request
+        /// </summary>
+        /// <param name="idUserSender">The id of the user who send the request</param>
+        /// <param name="idUserReceiver">The id of the user who recovers the request</param>
+        /// <param name="messageRequest">The message who accompanies the request</param>
+        /// <returns>Return true if the resquest has been correctly sended, else return false</returns>
+        public bool CreateFriendRequest(string idUserSender, string idUserReceiver, string messageRequest)
+        {
+            if (Connected)
+            {
+                return ClRequest.SendIdUsersToCreateFriendRequest(idUserSender, idUserReceiver, messageRequest); // Save the result of the creation
+            }
+            else
+            {
+                Console.WriteLine("The socket must be connected to the server !");
+                return false;
+            }
+        }
+
         /// <summary>
         /// Call the method who send the data for creating a new account to the database
         /// </summary>
@@ -201,7 +277,7 @@ namespace Tchat
         {
             if (Connected)
             {
-                return ClRequest.SendImageId(id);
+                return ClRequest.SendImageIdToGetImage(id);
             }
             else
             {
@@ -264,6 +340,12 @@ namespace Tchat
             }
         }
 
+        /// <summary>
+        /// Call the method who will update the statut of an user
+        /// </summary>
+        /// <param name="statut">The new statut for the user</param>
+        /// <param name="username">The name of the user</param>
+        /// <returns>Return false if an error has been encountered, else return true</returns>
         public bool UpdateStatutOfUser(string statut, string username)
         {
             if (Connected)
@@ -274,6 +356,115 @@ namespace Tchat
             {
                 Console.WriteLine("The socket must be connected to the server !");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Call the method who recovers the password of an user
+        /// </summary>
+        /// <param name="username">The name of the user</param>
+        /// <returns>Return the password of the user</returns>
+        public string GetPasswordOfUser(string username)
+        {
+            if (Connected)
+            {
+                return ClRequest.SendUsernameToGetPassword(username);
+            }
+            else
+            {
+                Console.WriteLine("The socket must be connected to the server !");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Call the method who recovers the centers of interests of an user
+        /// </summary>
+        /// <param name="username">The name of the user</param>
+        /// <returns>Return the password of the user</returns>
+        public string GetHobbiesOfUser(string username)
+        {
+            if (Connected)
+            {
+                return ClRequest.SendUsernameToGetHobbies(username);
+            }
+            else
+            {
+                Console.WriteLine("The socket must be connected to the server !");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Call the method who will send the data to update the profil of an user
+        /// </summary>
+        /// <param name="password">The name of the user</param>
+        /// <param name="email">The email of the user</param>
+        /// <param name="phone">The phone of the user</param>
+        /// <param name="description">The description of the user</param>
+        /// <param name="hobbies">The centers of interests of the user</param>
+        public void UpdateProfilUser(string username, string email, string phone, string description, string hobbies)
+        {
+            if (Connected)
+            {
+                ClRequest.SendUpdatedProfilOfUser(username, email, phone, description, hobbies);
+            }
+            else
+            {
+                Console.WriteLine("The socket must be connected to the server !");
+            }
+        }
+
+        /// <summary>
+        /// Call the method who will send the data to update the image of an user
+        /// </summary>
+        /// <param name="username">The name of the user</param>
+        /// <param name="columnImg">The column of the image</param>
+        /// <param name="idImg">The id of the image</param>
+        public void UpdateIdImageOfUser(string username, string columnImg, string idImg)
+        {
+            if (Connected)
+            {
+                ClRequest.SendUpdatedImageIdOfUser(username, columnImg, idImg);
+            }
+            else
+            {
+                Console.WriteLine("The socket must be connected to the server !");
+            }
+        }
+
+        /// <summary>
+        /// Call the method who will send updated password of an user
+        /// </summary>
+        /// <param name="username">The name of the user</param>
+        /// <param name="password">The password of the user</param>
+        public void UpdatePasswordOfUser(string username, string password)
+        {
+            if (Connected)
+            {
+                ClRequest.SendUpdatedPassword(username, password);
+            }
+            else
+            {
+                Console.WriteLine("The socket must be connected to the server !");
+            }
+        }
+
+        /// <summary>
+        /// Call the method who send an image to the server and recovers his id
+        /// </summary>
+        /// <param name="img">The image to send</param>
+        /// <returns>Return the password of the user</returns>
+        public string InsertImage(Image img)
+        {
+            if (Connected)
+            {
+                return ClRequest.SendImageAndGetId(img);
+            }
+            else
+            {
+                Console.WriteLine("The socket must be connected to the server !");
+                return null;
             }
         }
     }

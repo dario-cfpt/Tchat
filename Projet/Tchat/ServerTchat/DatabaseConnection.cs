@@ -2,7 +2,7 @@
  * Description : Chat online in Windows Form C#. Users can chat privately or they can chat in groups in "rooms"
  * Class : DatabaseConnection - Connection to the MySQL database
  * Author : GENGA Dario
- * Last update : 2017.12.14 (yyyy-MM-dd)
+ * Last update : 2017.12.16 (yyyy-MM-dd)
  */
 
 using System;
@@ -16,33 +16,50 @@ namespace ServerTchat
     /// </summary>
     class DatabaseConnection
     {
+        private MySqlConnection _connection;
         private string _server;
+        private string _port;
         private string _database;
         private string _user;
         private string _pwd;
-        private MySqlConnection _connection;
+
+        private const string DEFAULT_PORT = "3306";
 
         /// <summary>
-        /// Create the connection with the MySQL database
+        /// Create the connection with the MySQL database (default 3306 port used)
         /// </summary>
         /// <param name="server">The hostname or ip adress of the server with the MySQL database</param>
         /// <param name="database">The name of the MySQL database</param>
         /// <param name="user">The name of the user for the database</param>
         /// <param name="pwd">The password of the user for the database</param>
-        public DatabaseConnection(string server, string database, string user, string pwd)
+        public DatabaseConnection(string server, string database, string user, string pwd) : this(server, DEFAULT_PORT, database, user, pwd)
+        {
+            // Do nothing...
+        }
+
+        /// <summary>
+        /// Create the connection with the MySQL database
+        /// </summary>
+        /// <param name="server">The hostname or ip adress of the server with the MySQL database</param>
+        /// <param name="port">The port of the MySQL server</param>
+        /// <param name="database">The name of the MySQL database</param>
+        /// <param name="user">The name of the user for the database</param>
+        /// <param name="pwd">The password of the user for the database</param>
+        public DatabaseConnection(string server, string port, string database, string user, string pwd)
         {
             Server = server;
+            Port = port;
             Database = database;
             User = user;
             Pwd = pwd;
 
-            TryConnection();
+            TryConnection(Server, Port, Database, User, Pwd);
         }
 
         /// <summary>
         /// The hostname or ip adress of the server with the MySQL database
         /// </summary>
-        public string Server
+        private string Server
         {
             get => _server;
             set
@@ -59,9 +76,28 @@ namespace ServerTchat
         }
 
         /// <summary>
+        /// The hostname or ip adress of the server with the MySQL database
+        /// </summary>
+        private string Port
+        {
+            get => _port;
+            set
+            {
+                if (value != "")
+                {
+                    _port = value;
+                }
+                else
+                {
+                    Console.WriteLine("port can't be null !");
+                }
+            }
+        }
+
+        /// <summary>
         /// The name of the MySQL database
         /// </summary>
-        public string Database
+        private string Database
         {
             get => _database;
             set
@@ -80,7 +116,7 @@ namespace ServerTchat
         /// <summary>
         /// The name of the user for the database
         /// </summary>
-        public string User
+        private string User
         {
             get => _user;
             set
@@ -98,7 +134,7 @@ namespace ServerTchat
         /// <summary>
         /// The password of the user for the database
         /// </summary>
-        public string Pwd { get => _pwd; set => _pwd = value; }
+        private string Pwd { get => _pwd; set => _pwd = value; }
 
         /// <summary>
         /// The connection to the MySQL database
@@ -110,13 +146,13 @@ namespace ServerTchat
         /// Si la connexion a réussi on la laisse ouverte
         /// </summary>
         /// <returns>retourne true si la connexion à réussi, sinon retourne false</returns>
-        public bool TryConnection()
+        public bool TryConnection(string server, string port, string database, string user, string password)
         {
-            string ConnectionString = "SERVER=" + Server + ";DATABASE=" + Database + ";UID=" + User + ";PASSWORD=" + Pwd + ";";
-            
+            string connectionString = string.Format("SERVER={0};PORT={1};DATABASE={2};UID={3};PASSWORD={4}", server, port, database, user, password);
+
             try
             {
-                Connection = new MySqlConnection(ConnectionString);
+                Connection = new MySqlConnection(connectionString);
                 return OpenConnection();
             }
             catch (Exception ex)

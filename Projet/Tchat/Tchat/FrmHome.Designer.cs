@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             this.lblHome = new System.Windows.Forms.Label();
             this.lnkEditProfil = new System.Windows.Forms.LinkLabel();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
@@ -88,6 +88,8 @@
             this.pnlDescription = new System.Windows.Forms.Panel();
             this.rtbDescription = new System.Windows.Forms.RichTextBox();
             this.tpFriends = new System.Windows.Forms.TabPage();
+            this.tbxMessage = new System.Windows.Forms.TextBox();
+            this.rtbConversation = new System.Windows.Forms.RichTextBox();
             this.gbxFriends = new System.Windows.Forms.GroupBox();
             this.dgvFriendsList = new System.Windows.Forms.DataGridView();
             this.ColumnImage = new System.Windows.Forms.DataGridViewImageColumn();
@@ -103,8 +105,8 @@
             this.rdbOnline = new System.Windows.Forms.RadioButton();
             this.tpRooms = new System.Windows.Forms.TabPage();
             this.tpSettings = new System.Windows.Forms.TabPage();
-            this.rtbConversation = new System.Windows.Forms.RichTextBox();
-            this.tbxMessage = new System.Windows.Forms.TextBox();
+            this.tsConnected = new System.Windows.Forms.ToolStripStatusLabel();
+            this.tmrTryConnect = new System.Windows.Forms.Timer(this.components);
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.ssHome.SuspendLayout();
@@ -250,6 +252,7 @@
             // 
             this.ssHome.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsDate,
+            this.tsConnected,
             this.tsCopyright});
             this.ssHome.Location = new System.Drawing.Point(0, 703);
             this.ssHome.Name = "ssHome";
@@ -267,7 +270,7 @@
             // tsCopyright
             // 
             this.tsCopyright.Name = "tsCopyright";
-            this.tsCopyright.Size = new System.Drawing.Size(910, 17);
+            this.tsCopyright.Size = new System.Drawing.Size(795, 17);
             this.tsCopyright.Spring = true;
             this.tsCopyright.Text = "© 2017";
             this.tsCopyright.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -528,13 +531,13 @@
             // 
             // ColumnButton
             // 
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle2.BackColor = System.Drawing.Color.Red;
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Wingdings 2", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
-            dataGridViewCellStyle2.ForeColor = System.Drawing.Color.Red;
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.Color.Red;
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.Color.Red;
-            this.ColumnButton.DefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle1.BackColor = System.Drawing.Color.Red;
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Wingdings 2", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(2)));
+            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.Red;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.Color.Red;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.Color.Red;
+            this.ColumnButton.DefaultCellStyle = dataGridViewCellStyle1;
             this.ColumnButton.HeaderText = "Í";
             this.ColumnButton.Name = "ColumnButton";
             this.ColumnButton.ReadOnly = true;
@@ -582,6 +585,7 @@
             this.tbxPwdConfirm.ShortcutsEnabled = false;
             this.tbxPwdConfirm.Size = new System.Drawing.Size(219, 20);
             this.tbxPwdConfirm.TabIndex = 18;
+            this.tbxPwdConfirm.Tag = "";
             this.tbxPwdConfirm.UseSystemPasswordChar = true;
             this.tbxPwdConfirm.Visible = false;
             this.tbxPwdConfirm.TextChanged += new System.EventHandler(this.tbxPwd_TextChanged);
@@ -606,6 +610,7 @@
             this.lblPwdConfirm.Name = "lblPwdConfirm";
             this.lblPwdConfirm.Size = new System.Drawing.Size(152, 13);
             this.lblPwdConfirm.TabIndex = 16;
+            this.lblPwdConfirm.Tag = "";
             this.lblPwdConfirm.Text = "Confirmation du mot de passe :";
             this.lblPwdConfirm.Visible = false;
             // 
@@ -763,6 +768,23 @@
             this.tpFriends.Text = "Amis";
             this.tpFriends.UseVisualStyleBackColor = true;
             // 
+            // tbxMessage
+            // 
+            this.tbxMessage.Location = new System.Drawing.Point(379, 514);
+            this.tbxMessage.Name = "tbxMessage";
+            this.tbxMessage.Size = new System.Drawing.Size(575, 20);
+            this.tbxMessage.TabIndex = 18;
+            this.tbxMessage.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tbxMessage_KeyPress);
+            // 
+            // rtbConversation
+            // 
+            this.rtbConversation.Location = new System.Drawing.Point(379, 9);
+            this.rtbConversation.Name = "rtbConversation";
+            this.rtbConversation.ReadOnly = true;
+            this.rtbConversation.Size = new System.Drawing.Size(575, 495);
+            this.rtbConversation.TabIndex = 17;
+            this.rtbConversation.Text = "";
+            // 
             // gbxFriends
             // 
             this.gbxFriends.Controls.Add(this.dgvFriendsList);
@@ -915,22 +937,17 @@
             this.tpSettings.Text = "Paramètres";
             this.tpSettings.UseVisualStyleBackColor = true;
             // 
-            // rtbConversation
+            // tsConnected
             // 
-            this.rtbConversation.Location = new System.Drawing.Point(379, 9);
-            this.rtbConversation.Name = "rtbConversation";
-            this.rtbConversation.ReadOnly = true;
-            this.rtbConversation.Size = new System.Drawing.Size(575, 495);
-            this.rtbConversation.TabIndex = 17;
-            this.rtbConversation.Text = "";
+            this.tsConnected.ForeColor = System.Drawing.Color.Lime;
+            this.tsConnected.Name = "tsConnected";
+            this.tsConnected.Size = new System.Drawing.Size(115, 17);
+            this.tsConnected.Text = "Connecté au serveur";
             // 
-            // tbxMessage
+            // tmrTryConnect
             // 
-            this.tbxMessage.Location = new System.Drawing.Point(379, 514);
-            this.tbxMessage.Name = "tbxMessage";
-            this.tbxMessage.Size = new System.Drawing.Size(575, 20);
-            this.tbxMessage.TabIndex = 18;
-            this.tbxMessage.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tbxMessage_KeyPress);
+            this.tmrTryConnect.Interval = 3000;
+            this.tmrTryConnect.Tick += new System.EventHandler(this.tmrTryConnect_Tick);
             // 
             // FrmHome
             // 
@@ -1055,5 +1072,7 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn ColumnStatut;
         private System.Windows.Forms.TextBox tbxMessage;
         private System.Windows.Forms.RichTextBox rtbConversation;
+        private System.Windows.Forms.ToolStripStatusLabel tsConnected;
+        private System.Windows.Forms.Timer tmrTryConnect;
     }
 }

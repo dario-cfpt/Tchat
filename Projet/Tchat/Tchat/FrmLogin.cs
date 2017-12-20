@@ -1,9 +1,9 @@
 ﻿/* Project name : Tchat
  * Description : Chat online in Windows Form C#. Users can chat privately or they can chat in groups in "rooms"
- * Form : FrmLogin - This is first form of the app, the user can log in or create an account
+ * Form : FrmLogin - This is first form of the app, the user can log in or create an account with a link
  * Author : GENGA Dario
  * Project creation : 2017.08.31
- * Last update : 2017.12.14 (yyyy-MM-dd)
+ * Last update : 2017.12.17 (yyyy-MM-dd)
  * © 2017
  */
 
@@ -12,28 +12,29 @@ using System.Windows.Forms;
 
 namespace Tchat
 {
+    /// <summary>
+    /// This is first form of the app, the user can log in or create an account with a link
+    /// </summary>
     public partial class FrmLogin : Form
     {
-        private string _username;
         private ClientTchat _client;
+        private string _username;
+        private string _password;
 
-        public const string SERVER = "localhost";
-        public const string DATABASE = "mytchatroomdb";
-        public const string USER = "admin";
-        public const string PASSWORD = "8185c8ac4656219f4aa5541915079f7b3743e1b5f48bacfcc3386af016b55320";
-
-        // Les différents statuts de connection accepté dans la base :
-        public const string ONLINE = "En ligne";
-        public const string ABSENT = "Absent";
-        public const string DO_NOT_DISTURB = "Ne pas déranger";
-        public const string INVISIBLE = "Invisible";
-        public const string OFFLINE = "Hors-ligne";
-
+        /// <summary>
+        /// Login Window. Create the connection with the server
+        /// </summary>
         public FrmLogin()
         {
+            //TODO : icon for the app
             InitializeComponent();
             Client = new ClientTchat(); // Try to connect the client to the server
         }
+
+        /// <summary>
+        /// Containt all methods who manage the connection between the client and server
+        /// </summary>
+        public ClientTchat Client { get => _client; set => _client = value; }
 
         /// <summary>
         /// Contain the name of the user connected
@@ -41,30 +42,11 @@ namespace Tchat
         public string Username { get => _username;  set => _username = value; }
 
         /// <summary>
-        /// Containt all methods who manage the connection between the client and server
+        /// Contain the password of the user connected
         /// </summary>
-        public ClientTchat Client { get => _client; set => _client = value; }
-        
-        /// <summary>
-        /// Open the registration page when we click on the link
-        /// </summary>
-        private void lnkNoAccount_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            FrmRegister frmRegister = new FrmRegister(_client);
+        public string Password { get => _password; set => _password = value; }
 
-            var dr = frmRegister.ShowDialog(); // Open the registration page
 
-            if (dr == DialogResult.OK)
-            {
-                // Complete automaticaly the textbox when the account has been created
-                tbxUserName.Text = frmRegister.Username;
-                tbxPassword.Text = frmRegister.Password;
-
-                btnLogin.Select();
-            }
-
-        }
-        
         /// <summary>
         /// Try to connect the user to the database
         /// </summary>
@@ -81,6 +63,7 @@ namespace Tchat
                 MessageBox.Show("Bonjour " + username + " !", "Connexion réussi !");
 
                 Username = username; // Save the username after the connection
+                Password = password; // Save the password after the connection
 
                 FrmHome frmHome = new FrmHome(this);
                 frmHome.Show();
@@ -88,12 +71,40 @@ namespace Tchat
             }
             else
             {
-                // Unknown user or incorrect password
-                string message = "Le nom d'utilisateur ou le mot de passe est incorrect !";
                 string title = "Erreur";
-
+                string message = null;
+                
+                if (!Client.ClientSocket.Connected)
+                {
+                    message = "Vous n'êtes pas connectez au serveur !"; // Connection with the server error
+                    tmrTryConnect.Enabled = true;
+                }
+                else
+                {
+                    message = "Le nom d'utilisateur ou le mot de passe est incorrect !"; // Login error
+                }
                 MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+        
+        /// <summary>
+        /// Open the registration page when we click on the link
+        /// </summary>
+        private void lnkNoAccount_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            FrmRegister frmRegister = new FrmRegister(_client);
+
+            var dr = frmRegister.ShowDialog(); // Open the registration page
+
+            if (dr == DialogResult.OK)
+            {
+                // Complete automaticaly the textbox when the account has been created
+                tbxUserName.Text = frmRegister.Username;
+                tbxPassword.Text = frmRegister.Password;
+                
+                btnLogin.Select();
+            }
+
         }
         
         /// <summary>
@@ -119,6 +130,34 @@ namespace Tchat
             // Authorize only letters, numbers and controls
             if ((!char.IsLetter(e.KeyChar)) && (!char.IsNumber(e.KeyChar)) && (!char.IsControl(e.KeyChar)))
                 e.Handled = true;
+        }
+
+        /// <summary>
+        /// Shutdown and close the socket before leaving the app
+        /// </summary>
+        private void FrmLogin_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            // REMARK : The code below seems to have no effect (an error is still detected in the server), 
+            //          send a command that will tell the server to close the connection might be better
+            if (Client.ClientSocket.Connected)
+            {
+                Client.ClientSocket.Shutdown(System.Net.Sockets.SocketShutdown.Both);
+                Client.ClientSocket.Close();
+            }
+        }
+
+        /// <summary>
+        /// Try to connect the user to the server
+        /// </summary>
+        private void tmrTryConnect_Tick(object sender, EventArgs e)
+        {
+            Client = new ClientTchat(); // Try to connect the client to the server
+
+            if (Client.ClientSocket.Connected)
+            {
+                MessageBox.Show("Vous êtes connectez au serveur !");
+                tmrTryConnect.Enabled = false;
+            }
         }
     }
 }

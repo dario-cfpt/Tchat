@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.label1 = new System.Windows.Forms.Label();
             this.tbxUserName = new System.Windows.Forms.TextBox();
             this.tbxPassword = new System.Windows.Forms.TextBox();
@@ -35,6 +36,7 @@
             this.label3 = new System.Windows.Forms.Label();
             this.lnkNoAccount = new System.Windows.Forms.LinkLabel();
             this.btnLogin = new System.Windows.Forms.Button();
+            this.tmrTryConnect = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // label1
@@ -110,6 +112,11 @@
             this.btnLogin.UseVisualStyleBackColor = true;
             this.btnLogin.Click += new System.EventHandler(this.btnLogin_Click);
             // 
+            // tmrTryConnect
+            // 
+            this.tmrTryConnect.Interval = 3000;
+            this.tmrTryConnect.Tick += new System.EventHandler(this.tmrTryConnect_Tick);
+            // 
             // FrmLogin
             // 
             this.AcceptButton = this.btnLogin;
@@ -128,6 +135,7 @@
             this.Name = "FrmLogin";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Connection";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.FrmLogin_FormClosed);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -142,6 +150,7 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.LinkLabel lnkNoAccount;
         private System.Windows.Forms.Button btnLogin;
+        private System.Windows.Forms.Timer tmrTryConnect;
     }
 }
 

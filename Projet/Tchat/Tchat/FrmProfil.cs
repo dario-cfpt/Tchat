@@ -24,7 +24,5 @@ namespace Tchat
         {
             InitializeComponent();
         }
-
-
     }
 }

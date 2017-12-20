@@ -1,82 +1,164 @@
 ﻿/* Project name : Tchat
  * Description : Chat online in Windows Form C#. Users can chat privately or they can chat in groups in "rooms"
- * Form : FrmFriendInvitation 
+ * Form : FrmFriendInvitation - This windows allows to create friend request
  * Author : GENGA Dario
- * Last update : 2017.16.22 (yyyy-MM-dd)
+ * Last update : 2017.12.17 (yyyy-MM-dd)
  */
-
 using System;
 using System.Windows.Forms;
 
 namespace Tchat
 {
+    /// <summary>
+    /// This windows allows to create friend request
+    /// </summary>
     public partial class FrmFriendInvitation : Form
     {
-        private FrmLogin _frmLogin;
-        private RequestsSQL _requestsSQL;
-        private bool _cancel; // false = on autorise la fermeture de la form, true = on la refuse
-        private string _errorMessage;
-        private string _friendResquest;
-        private string _messageRequest;
+        private ClientTchat _client;
+        private string _username;
 
-        public FrmFriendInvitation(FrmLogin frmLogin, RequestsSQL requestsSQL)
+        private string _friendName;
+        private string _messageRequest;
+        private string _errorMessage;
+
+        private bool _checkRequest;
+        private bool _cancel;
+
+
+        /// <summary>
+        /// The friend invitation window
+        /// </summary>
+        /// <param name="client">The methods and connections of the client for the server</param>
+        /// <param name="username">The name of the user connected</param>
+        public FrmFriendInvitation(ClientTchat client, string username)
         {
             InitializeComponent();
+            
+            Client = client;
+            Username = username;
 
-            _frmLogin = frmLogin;
-            _requestsSQL = requestsSQL;
-            _cancel = false;
-            _errorMessage = "";
-            FriendRequest = "";
+            CheckRequest = false;
+            Cancel = false;
+            
+            FriendName = "";
             MessageRequest = rtbMessage.Text;
+            ErrorMessage = "";
+
         }
 
         /// <summary>
-        /// Le nom de l'utilisateur à qui l'on souhaite envoyé une invitation pour devenir ami
+        /// Contains the methods of the client for the server
         /// </summary>
-        public string FriendRequest
+        private ClientTchat Client { get => _client; set => _client = value; }
+
+        /// <summary>
+        /// The name of the user connected
+        /// </summary>
+        private string Username { get => _username; set => _username = value; }
+
+        /// <summary>
+        /// The name of the user to whom we want to send an invitation to become a friend
+        /// <para>When we set this we have to do multiple test to detect potential errors</para>
+        /// </summary>
+        public string FriendName
         {
-            get
-            {
-                return _friendResquest;
-            }
+            get =>_friendName;
             set
             {
-                // Si aucun pseudo n'est spécifié, alors on ne fait aucun traitement
+                // If no username is specified then no treatment is done
                 if (!String.IsNullOrWhiteSpace(tbxFriend.Text))
                 {
-                    // On affiche un message d'erreur si on tente d'envoyer une invitation à nous-même
-                    if (tbxFriend.Text == _frmLogin.Username)
+                    // We get an error message if we try to send an invitation to ourselves
+                    if (tbxFriend.Text == Username)
                     {
-                        _errorMessage = "Vous ne pouvez pas devenir ami avec vous-même !";
-                        _cancel = true;
+                        ErrorMessage = "Vous ne pouvez pas devenir ami avec vous-même !";
+                        Cancel = true;
                     }
-                    // On affiche un message d'erreur si on tente d'envoyé une invitation à un utilisateur qui n'existe pas
-                    else if (!_requestsSQL.CheckIfUserExist(tbxFriend.Text))
+
+                    // We get an error message if we try to send an invitation to a user who does not exist
+                    else if (!Client.CheckIfUserExist(tbxFriend.Text))
                     {
-                        _errorMessage = "Nom d'utilisateur inconnu !";
-                        _cancel = true;
+                        ErrorMessage = "Nom d'utilisateur inconnu !";
+                        Cancel = true;
                     }
-                    // Si il n'y a pas d'erreur alors on stocke le pseudo
+                    // If there is no error then we store the username
                     else
                     {
-                        _cancel = false;
-                        _friendResquest = value;
+                        Cancel = false;
+                        _friendName = value;
                     }
                 }
                 else
                 {
-                    _cancel = false;
+                    Cancel = false;
                 }
             }
         }
-        /// <summary>
-        /// Le message qui accompagne l'invitation
-        /// </summary>
-        public string MessageRequest { get => _messageRequest; set => _messageRequest = value; }
 
         /// <summary>
-        /// Active ou désactive le bouton selon le contenu du textbox
+        /// The message that accompanies the invitation
+        /// </summary>
+        public string MessageRequest { get => _messageRequest; set => _messageRequest = value; }
+        
+        /// <summary>
+        /// The message error if we can't create a friend request
+        /// </summary>
+        private string ErrorMessage { get => _errorMessage; set => _errorMessage = value; }
+
+        /// <summary>
+        /// If true then we have to check the request before closing the form, if false then we close it without check
+        /// </summary>
+        private bool CheckRequest { get => _checkRequest; set => _checkRequest = value; }
+
+        /// <summary>
+        /// Indicate if we authorize the form to close or not (false = authorized, true = not authorized
+        /// </summary>
+        private bool Cancel { get => _cancel; set => _cancel = value; }
+
+
+        /// <summary>
+        /// Check the user's name when closing the page
+        /// </summary>
+        private void FrmFriendInvitation_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // We check the request if the user has clicked on the send button
+            if (CheckRequest)
+            {
+                FriendName = tbxFriend.Text;
+
+                // If there was an error while changing the friend name, then Cancel would be true (so we would not need to do the last test)
+                if (!Cancel)
+                {
+                    // If Cancel is false then we test if we don't already have sended a friend request
+                    if (!Client.CheckDuplicateFriendRequest(Username, FriendName))
+                    {
+                        MessageRequest = rtbMessage.Text;
+                    }
+                    else
+                    {
+                        ErrorMessage = "Vous avez déjà envoyé une demande d'amitié à " + FriendName + " !";
+
+                        // A message is displayed to the user to inform him that he has already sent a friend request
+                        MessageBox.Show(ErrorMessage, "Invitation déjà envoyé", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        lblError.Text = ErrorMessage;
+                        lblError.Visible = true;
+                        Cancel = true;
+                    }
+                }
+                else
+                {
+                    lblError.Text = ErrorMessage;
+                    lblError.Visible = true;
+                }
+
+                CheckRequest = false;
+                e.Cancel = Cancel;
+            }
+            // Else the form will be closed without check (and without sending)
+        }
+
+        /// <summary>
+        /// Toggle the button according to the content of the TextBox
         /// </summary>
         private void tbxFriend_TextChanged(object sender, EventArgs e)
         {
@@ -91,29 +173,12 @@ namespace Tchat
         }
 
         /// <summary>
-        /// Vérifie le nom de l'utilisateur lors de la formeture de la page
+        /// Set to true the CheckRequest when the user click on the button
         /// </summary>
-        private void FrmFriendInvitation_FormClosing(object sender, FormClosingEventArgs e)
+        private void btnOk_Click(object sender, EventArgs e)
         {
-            FriendRequest = tbxFriend.Text;
-
-            // Test si on n'a pas déjà envoyé une demande d'amitié
-            if (!_requestsSQL.CheckDuplicateFriendRequest(_frmLogin.Username, FriendRequest))
-            {
-                MessageRequest = rtbMessage.Text;
-                lblError.Text = _errorMessage;
-                lblError.Visible = _cancel;
-            }
-            else
-            {
-                // TODO : Fermer la fenêtre sans vérification si on tente de la fermer via le bouton annuler ou la croix rouge
-
-                // On affiche un message à l'utilisateur pour le prévenir qu'il a déjà envoyé une demande d'amitié
-                MessageBox.Show("Vous avez déjà envoyé une demande d'amitié à " + FriendRequest + " !", "Invitation déjà envoyé", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                _cancel = true;
-            }
-
-            e.Cancel = _cancel;
+            CheckRequest = true;
         }
+
     }
 }

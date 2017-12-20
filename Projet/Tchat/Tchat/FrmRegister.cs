@@ -2,7 +2,7 @@
  * Description : Chat online in Windows Form C#. Users can chat privately or they can chat in groups in "rooms"
  * Form : FrmRegister - This form is used to create a new account
  * Author : GENGA Dario
- * Last update : 2017.12.14 (yyyy-MM-dd)
+ * Last update : 2017.12.17 (yyyy-MM-dd)
  */
 
 using System;
@@ -13,30 +13,36 @@ namespace Tchat
     public partial class FrmRegister : Form
     {
         private ClientTchat _client;
-        private string _username; // This will serve for the autocompletion later
-        private string _password; // This will serve for the autocompletion later
+        private string _username;
+        private string _password;
 
         /// <summary>
-        /// The register form.
+        /// The registration window
         /// </summary>
-        /// <param name="client">ClientTchat object who will maintain only 1 connection of the client whith the server</param>
+        /// <param name="client">The methods and connections of the client for the server</param>
         public FrmRegister(ClientTchat client)
         {
             InitializeComponent();
-            // We don't want to create multiple connection of the same user to the server, so we recup the current one !
-            _client = client; 
+
+            Client = client; 
         }
-        
+
         /// <summary>
-        /// Name of the user
+        /// Containt all methods who manage the connection between the client and server
+        /// </summary>
+        public ClientTchat Client { get => _client; set => _client = value; }
+
+        /// <summary>
+        /// Name of the user (serve for the autocompletion in the login form)
         /// </summary>
         public string Username { get => _username; set => _username = value; }
 
         /// <summary>
-        /// Password of the user
+        /// Password of the user (serve for the autocompletion in the login form)
         /// </summary>
         public string Password { get => _password; set => _password = value; }
         
+
         /// <summary>
         /// The user registers to the database
         /// </summary>
@@ -48,7 +54,7 @@ namespace Tchat
             string phone = tbxPhone.Text;
             
             // We send the data to the server for creation a new account and recup the result of the creation
-            bool created = _client.CreateNewAccount(Username, Password, email, phone);
+            bool created = Client.CreateNewAccount(Username, Password, email, phone);
 
             if (created)
             {

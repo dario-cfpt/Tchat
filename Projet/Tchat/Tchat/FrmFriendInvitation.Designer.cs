@@ -119,6 +119,7 @@
             this.btnOk.TabIndex = 7;
             this.btnOk.Text = "Envoyer";
             this.btnOk.UseVisualStyleBackColor = true;
+            this.btnOk.Click += new System.EventHandler(this.btnOk_Click);
             // 
             // lblError
             // 

@@ -2,14 +2,16 @@
  * Description : Chat online in Windows Form C#. Users can chat privately or they can chat in groups in "rooms"
  * Class : ClientRequest - Manage the requests between the client and the server
  * Author : GENGA Dario
- * Last update : 2017.12.14 (yyyy-MM-dd)
+ * Last update : 2017.12.17 (yyyy-MM-dd)
  */
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Tchat
@@ -37,7 +39,32 @@ namespace Tchat
 
         #region UtilityMethods
         /// <summary>
-        /// Serialize a jagged byte array (byte[][]) into a byte array (byte[]) and send it
+        /// Encrypts the received text into a SHA256 string 
+        /// </summary>
+        /// <param name="text">The text to encrypt</param>
+        /// <returns>The encrypted text in SHA256</returns>
+        private string GetHashSha256(string text)
+        {
+            string hashString = "";
+
+            // Encode the text in UTF8 and get the bytes of each character in a table
+            byte[] bytes = Encoding.UTF8.GetBytes(text);
+            
+            // Hash our array of byte and stock it in a new array
+            SHA256Managed sha256Managed = new SHA256Managed();
+            byte[] hash = sha256Managed.ComputeHash(bytes);
+            
+            // Add ech byte of our array into our string
+            foreach (byte b in hash)
+            {
+                hashString += String.Format("{0:x2}", b); // b is formatted in hexadecimal
+            }
+
+            return hashString;
+        }
+
+        /// <summary>
+        /// Serialize a jagged byte array (byte[][]) into a byte array (byte[]) and return it
         /// </summary>
         /// <param name="data"></param>
         /// <returns>Return the serialized jagged byte array</returns>
@@ -50,6 +77,22 @@ namespace Tchat
             byte[] byteData = ms.ToArray();
 
             return byteData;
+        }
+
+        /// <summary>
+        /// Serialize any object into a byte array (byte[]) and return it
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns>Return the serialized jagged byte array</returns>
+        private byte[] ConvertObjectToByteArray(object obj)
+        {
+            // Serialize the object to get a byte array
+            MemoryStream ms = new MemoryStream();
+            BinaryFormatter bf = new BinaryFormatter();
+            bf.Serialize(ms, obj);
+            byte[] byteArray = ms.ToArray();
+
+            return byteArray;
         }
 
         /// <summary>
@@ -93,6 +136,8 @@ namespace Tchat
         /// <returns>Return the response of request by the server</returns>
         public bool SendLogin(string username, string password)
         {
+            password = GetHashSha256(password); // Encrypt the password
+
             // Create a jagged byte array who contain the username and password of the user
             byte[][] login = { Encoding.UTF8.GetBytes(username), Encoding.UTF8.GetBytes(password) };
 
@@ -160,6 +205,8 @@ namespace Tchat
         /// <returns>Return the response of the server</returns>
         public bool SendNewAccount(string username, string password, string email, string phone)
         {
+            password = GetHashSha256(password); // Encrypt the password
+
             // Create a jagged byte array who contain the data for the new account
             byte[][] account = {
                 Encoding.UTF8.GetBytes(username),
@@ -193,15 +240,22 @@ namespace Tchat
             byte[] buffer = new byte[1024];
             Client.Receive(buffer);
 
-            // We deserialize the buffer into a jagged byte array
-            MemoryStream ms = new MemoryStream(buffer);
-            BinaryFormatter bf = new BinaryFormatter();
-            byte[][] result = (byte[][])bf.Deserialize(ms);
+            if (buffer.All(singleByte => singleByte == 0))
+            {
+                return new string[0]; // Empty buffer received
+            }
+            else
+            {            
+                // We deserialize the buffer into a jagged byte array
+                MemoryStream ms = new MemoryStream(buffer);
+                BinaryFormatter bf = new BinaryFormatter();
+                byte[][] result = (byte[][])bf.Deserialize(ms);
 
-            // We recup the id stored in the jagged array and we return it
-            string[] arrayImg = { Encoding.UTF8.GetString(result[0]), Encoding.UTF8.GetString(result[1]) };
-            return arrayImg;
+                // We recup the id stored in the jagged array and we return it
+                string[] arrayImg = { Encoding.UTF8.GetString(result[0]), Encoding.UTF8.GetString(result[1]) };
+                return arrayImg;
 
+            }
         }
 
         /// <summary>
@@ -209,7 +263,7 @@ namespace Tchat
         /// </summary>
         /// <param name="idImage">The image id</param>
         /// <returns>Return the image that corresponds to the id</returns>
-        public Image SendImageId(string idImage)
+        public Image SendImageIdToGetImage(string idImage)
         {
             // Create a jagged byte array who contain the id of the image (we have to create a jagged even if there is only one element)
             byte[][] id = { Encoding.UTF8.GetBytes(idImage) };
@@ -309,18 +363,245 @@ namespace Tchat
         public bool SendNewStatutForUser(string statut, string username)
         {
             // Create a jagged byte array who contain the new statut and the username
-            byte[][] jaggedData = {
+            byte[][] buffer = {
                 Encoding.UTF8.GetBytes(statut),
                 Encoding.UTF8.GetBytes(username),
             };
 
             // Serialize the command and data and send it
-            SerializeAndSendBuffer("/UpdateStatut", jaggedData);
+            SerializeAndSendBuffer("/UpdateStatut", buffer);
 
             // Recup the response of the server and return it
             bool result = GetBooleanResult();
             return result;
         }
+
+        /// <summary>
+        /// Send the ID of the user sender and the user receiver to check if they don't already have a friend request
+        /// </summary>
+        /// <param name="idUserSender">The id of the user who send the request</param>
+        /// <param name="idUserReceiver">The id of the user who recovers the request</param>
+        /// <returns>Return true if they are already a friend request, else return false</returns>
+        public bool SendIdUsersToCheckFriendRequest(string idUserSender, string idUserReceiver)
+        {
+            // Create a jagged byte array who contain the id of the users
+            byte[][] buffer = {
+                Encoding.UTF8.GetBytes(idUserSender),
+                Encoding.UTF8.GetBytes(idUserReceiver)
+            };
+
+            // Serialize the command and data and send it
+            SerializeAndSendBuffer("/CheckFriendRequest", buffer);
+
+            // Recup the response of the server and return it
+            bool result = GetBooleanResult();
+            return result;
+        }
+
+        /// <summary>
+        /// Send a name to check if an user exist with this name
+        /// </summary>
+        /// <param name="username">The name of the user to check</param>
+        /// <returns>Return true if the user exist, else return false</returns>
+        public bool SendUsernameToCheckIfUserExist(string username)
+        {//TODO : test this method
+            // Create a jagged byte array who contain the name of the user
+            byte[][] buffer = { Encoding.UTF8.GetBytes(username) };
+
+            // Serialize the command and data and send it
+            SerializeAndSendBuffer("/CheckUser", buffer);
+
+            // Recup the response of the server and return it
+            bool result = GetBooleanResult();
+            return result;
+        }
+
+        /// <summary>
+        /// Send the name of the user sender and the user receiver to check if they aren't a duplicate friend request
+        /// </summary>
+        /// <param name="userSender">The name of the user who send the request</param>
+        /// <param name="userReceiver">The name of the user who recovers the request</param>
+        /// <returns>Return true if they are a duplicte friend request, else return false</returns>
+        public bool SendUsernamesToCheckDuplicateFriendRequest(string userSender, string userReceiver)
+        {
+            // Create a jagged byte array who contain the name of the users
+            byte[][] buffer = {
+                Encoding.UTF8.GetBytes(userSender),
+                Encoding.UTF8.GetBytes(userReceiver)
+            };
+
+            // Serialize the command and data and send it
+            SerializeAndSendBuffer("/CheckDuplicateFriendRequest", buffer);
+
+            // Recup the response of the server and return it
+            bool result = GetBooleanResult();
+            return result;
+        }
+
+        /// <summary>
+        /// Send the ID of the user sender and the user receiver to create a friend request
+        /// </summary>
+        /// <param name="idUserSender">The id of the user who send the request</param>
+        /// <param name="idUserReceiver">The id of the user who recovers the request</param>
+        /// <param name="messageRequest">The message who accompanies the request</param>
+        /// <returns>Return true if the resquest has been correctly sended, else return false</returns>
+        public bool SendIdUsersToCreateFriendRequest(string idUserSender, string idUserReceiver, string messageRequest)
+        {
+            // Create a jagged byte array who contain the data
+            byte[][] buffer = {
+                Encoding.UTF8.GetBytes(idUserSender),
+                Encoding.UTF8.GetBytes(idUserReceiver),
+                Encoding.UTF8.GetBytes(messageRequest)
+            };
+
+            // Serialize the command and data and send it
+            SerializeAndSendBuffer("/CreateFriendRequest", buffer);
+
+            // Recup the response of the server and return it
+            bool result = GetBooleanResult();
+            return result;
+        }
+
+
+        /// <summary>
+        /// Send the name of an user to get is password
+        /// </summary>
+        /// <param name="username">The name of the user</param>
+        /// <returns>Return the password of the user</returns>
+        public string SendUsernameToGetPassword(string username)
+        {
+            // Create a jagged byte array who contain the username (we have to create a jaggend even if there is only one element)
+            byte[][] user = { Encoding.UTF8.GetBytes(username) };
+
+            SerializeAndSendBuffer("/GetPassword", user);
+
+            // Receive the buffer by the server (but we have to deserialize it)
+            byte[] buffer = new byte[128];
+            Client.Receive(buffer);
+
+            // Get the username of the user and return it
+            string password = Encoding.UTF8.GetString(buffer);
+            password = password.Replace("\0", ""); // this avoid to have \0 in the end of the string if the name lenght is inferior less than the buffer size 
+            return password;
+        }
+
+
+        /// <summary>
+        /// Send the name of an user to get is password
+        /// </summary>
+        /// <param name="username">The name of the user</param>
+        /// <returns>Return the centers of interests of the user</returns>
+        public string SendUsernameToGetHobbies(string username)
+        {
+            // Create a jagged byte array who contain the username (we have to create a jaggend even if there is only one element)
+            byte[][] user = { Encoding.UTF8.GetBytes(username) };
+
+            SerializeAndSendBuffer("/GetHobbies", user);
+
+            // Receive the buffer by the server
+            byte[] buffer = new byte[128];
+            Client.Receive(buffer);
+
+            // Get the hobbies of the user and return it
+            string hobbies = Encoding.UTF8.GetString(buffer);
+            hobbies = hobbies.Replace("\0", ""); // this avoid to have \0 in the end of the string if the name lenght is inferior less than the buffer size 
+            return hobbies;
+        }
+
+        /// <summary>
+        /// Send the updated profil of an user
+        /// </summary>
+        /// <param name="username">The name of the user</param>
+        /// <param name="email">The email of the user</param>
+        /// <param name="phone">The phone of the user</param>
+        /// <param name="description">The description of the profil of the user</param>
+        /// <param name="hobbies">The centers of interests of the user</param>
+        public void SendUpdatedProfilOfUser(string username, string email, string phone, string description, string hobbies)
+        {
+            // Create a jagged byte array who contain the profil
+            byte[][] profil = {
+                Encoding.UTF8.GetBytes(username),
+                Encoding.UTF8.GetBytes(email),
+                Encoding.UTF8.GetBytes(phone),
+                Encoding.UTF8.GetBytes(description),
+                Encoding.UTF8.GetBytes(hobbies)
+            };
+
+            SerializeAndSendBuffer("/UpdateProfil", profil);
+
+            // We must receive the result before continuing (otherwise we will have interface problems with the profil)
+            byte[] result = new byte[1];
+            Client.Receive(result);
+        }
+
+        /// <summary>
+        /// Send the updated image id of an user
+        /// </summary>
+        /// <param name="username">The name of the user</param>
+        /// <param name="columnImg">The column of the image</param>
+        /// <param name="idImg">The id of the image</param>
+        public void SendUpdatedImageIdOfUser(string username, string columnImg, string idImg)
+        {// TODO : test this method
+            // Create a jagged byte array who contain the data
+            byte[][] buffer = {
+                Encoding.UTF8.GetBytes(username),
+                Encoding.UTF8.GetBytes(columnImg),
+                Encoding.UTF8.GetBytes(idImg)
+            };
+
+            SerializeAndSendBuffer("/UpdateIdImage", buffer);
+
+            // We must receive the result before continuing (otherwise we will have interface problems with the profil)
+            byte[] result = new byte[1];
+            Client.Receive(result);
+
+        }
+
+        /// <summary>
+        /// Send the updated profil of an user
+        /// </summary>
+        /// <param name="username">The name of the user</param>
+        /// <param name="password">The password of the user</param>
+        public void SendUpdatedPassword(string username, string password)
+        {
+            password = GetHashSha256(password); // Encrypt the password
+
+            // Create a jagged byte array who contain the username and password
+            byte[][] buffer = {
+                Encoding.UTF8.GetBytes(username),
+                Encoding.UTF8.GetBytes(password)
+            };
+
+            SerializeAndSendBuffer("/UpdatePassword", buffer);
+
+            // We must receive the result before continuing (otherwise we will have interface problems with the profil)
+            byte[] result = new byte[1];
+            Client.Receive(result);
+        }
+
+        /// <summary>
+        /// Send an image with is format and received is id
+        /// </summary>
+        /// <param name="img">The image to send</param>
+        /// <returns>Return the id of the image after it has been added to the database</returns>
+        public string SendImageAndGetId(Image img)
+        {//TODO : define a maximum image size (it's actually 1048576 byte)
+            // Create a jagged byte array who contain the image and the image format
+            byte[][] byteImage = { ConvertObjectToByteArray(img) };
+
+            // Send a jagged byte array who contains the data
+            SerializeAndSendBuffer("/InsertImage", byteImage);
+
+            // Receive the buffer by the server
+            byte[] buffer = new byte[4];
+            Client.Receive(buffer);
+
+            // Get the image id and return it
+            string imageId = Encoding.UTF8.GetString(buffer);
+            imageId = imageId.Replace("\0", ""); // this avoid to have \0 in the end of the string if the name lenght is inferior less than the buffer size 
+            return imageId;
+        }
+
         #endregion DataMethods
     }
 }

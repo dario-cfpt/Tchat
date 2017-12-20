@@ -2,12 +2,11 @@
  * Description : Chat server application console for the project "Tchat"
  * Class : ServerRequest - Manage the requests of the chat server with the database
  * Author : GENGA Dario
- * Last update : 2017.12.14 (yyyy-MM-dd)
+ * Last update : 2017.12.17 (yyyy-MM-dd)
  */
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -31,6 +30,9 @@ namespace ServerTchat
             RequestsSQL = requestsSQL;
         }
 
+        /// <summary>
+        /// Contains all SQL query methods
+        /// </summary>
         private RequestsSQL RequestsSQL { get => _requestsSQL; set => _requestsSQL = value; }
 
         /// <summary>
@@ -51,6 +53,21 @@ namespace ServerTchat
         }
 
         /// <summary>
+        /// Deserialize a byte array into an object and return it
+        /// </summary>
+        /// <param name="buffer">The byte array of the object to deserialize</param>
+        /// <returns>Return an object</returns>
+        private object ConvertByteArrayToObject(byte[] buffer)
+        {
+            // Deserialize the buffer into an image and return it
+            MemoryStream ms = new MemoryStream(buffer);
+            BinaryFormatter bf = new BinaryFormatter();
+            Object obj = bf.Deserialize(ms);
+
+            return obj;
+        }
+
+        /// <summary>
         /// Try to connect the user to the database
         /// <para>The result is sended to the client</para>
         /// </summary>
@@ -68,7 +85,6 @@ namespace ServerTchat
             // Convert the result of the connection into a byte array and send it to the client
             byte[] buffer = BitConverter.GetBytes(accepted);
             handler.Send(buffer);
-            
         }
 
         /// <summary>
@@ -91,7 +107,6 @@ namespace ServerTchat
             // Convert the result of the creation into a byte array and send it to the client
             byte[] buffer = BitConverter.GetBytes(created);
             handler.Send(buffer);
-
         }
 
         /// <summary>
@@ -149,7 +164,25 @@ namespace ServerTchat
             byte[] buffer = Encoding.UTF8.GetBytes(id);
             handler.Send(buffer);
         }
-        
+
+        /// <summary>
+        /// Recovers the password of an user by his username
+        /// </summary>
+        /// <param name="handler">The socket of the client</param>
+        /// <param name="data">Jagged byte array who contain the username</param>
+        public void CommandGetUserPasswordByUsername(Socket handler, byte[][] data)
+        {
+            // Recovers the username
+            string username = Encoding.UTF8.GetString(data[0]);
+
+            // Recovers the password of the user
+            string password = RequestsSQL.GetUserPasswordByUsername(username);
+
+            // Convert the password into a byte array and send it to the client
+            byte[] buffer = Encoding.UTF8.GetBytes(password);
+            handler.Send(buffer);
+        }
+
         /// <summary>
         /// Recovers the images id of the avatar and backgroud images by an username
         /// </summary>
@@ -163,12 +196,17 @@ namespace ServerTchat
             // Recovers the result of the request into a string array
             string[] arrayImg = RequestsSQL.GetUserImagesIdByUsername(username);
 
+            // We can't get bytes of null value, so we set it to 0 if needed
+            if (arrayImg[0] == null)
+                arrayImg[0] = "0";
+            if (arrayImg[1] == null)
+                arrayImg[1] = "0";
+
             // Create a jagged byte array of the result
             byte[][] jaggedResult = { Encoding.UTF8.GetBytes(arrayImg[0]), Encoding.UTF8.GetBytes(arrayImg[1]) };
 
             // Convert the result into a byte array and send it to the client (who will have to deserialize it)
             SerializeObjectIntoByteArrayAndSendIt(handler, jaggedResult);
-
         }
 
         /// <summary>
@@ -203,7 +241,6 @@ namespace ServerTchat
 
             // Serialize the profil into a byte array and send it to the client
             SerializeObjectIntoByteArrayAndSendIt(handler, profil);
-
         }
 
         /// <summary>
@@ -239,6 +276,177 @@ namespace ServerTchat
 
             // Save the image into a byte array and send it to the client
             SerializeObjectIntoByteArrayAndSendIt(handler, img);
+        }
+
+        /// <summary>
+        /// Recovers the centers of interests of an user by his username
+        /// </summary>
+        /// <param name="handler">The socket of the client</param>
+        /// <param name="data">Jagged byte array who contain the username</param>
+        public void CommandGetUserHobbiesByUsername(Socket handler, byte[][] data)
+        {
+            // Recovers the username
+            string username = Encoding.UTF8.GetString(data[0]);
+
+            // Recovers the hobbies of the user
+            string hobbies = RequestsSQL.GetUserHobbiesByUsername(username);
+
+            // Convert the password into a byte array and send it to the client
+            byte[] buffer = Encoding.UTF8.GetBytes(hobbies);
+            handler.Send(buffer);
+        }
+
+        /// <summary>
+        /// Update the profil of an user
+        /// </summary>
+        /// <param name="handler">The socket of the client who is trying to connect the database</param>
+        /// <param name="data">Jagged byte array of the profil</param>
+        public void CommandUpdateProfil(Socket handler, byte[][] data)
+        {
+            // Recovers data of the new account
+            string username = Encoding.UTF8.GetString(data[0]);
+            string email = Encoding.UTF8.GetString(data[1]);
+            string phone = Encoding.UTF8.GetString(data[2]);
+            string description = Encoding.UTF8.GetString(data[3]);
+            string hobbies = Encoding.UTF8.GetString(data[4]);
+
+            // Update the profil
+            bool result = RequestsSQL.UpdateProfilUser(username, email, phone, description, hobbies);
+
+            // Convert the result of the update into a byte array and send it to the client
+            byte[] buffer = BitConverter.GetBytes(result);
+            handler.Send(buffer);
+        }
+
+        /// <summary>
+        /// Update the password of an user
+        /// </summary>
+        /// <param name="handler">The socket of the client who is trying to connect the database</param>
+        /// <param name="data">Jagged byte array of the username and password </param>
+        public void CommandUpdatePassword(Socket handler, byte[][] data)
+        {
+            // Recovers data of the new account
+            string username = Encoding.UTF8.GetString(data[0]);
+            string password = Encoding.UTF8.GetString(data[1]);
+            // Update the profil
+            bool result = RequestsSQL.UpdatePasswordUser(username, password);
+
+            // Convert the result of the update into a byte array and send it to the client
+            byte[] buffer = BitConverter.GetBytes(result);
+            handler.Send(buffer);
+        }
+
+        /// <summary>
+        /// Update the id of an image of an user
+        /// </summary>
+        /// <param name="handler">The socket of the client who is trying to connect the database</param>
+        /// <param name="data">Jagged byte array of the data</param>
+        public void CommandUpdateIdImageOfUser(Socket handler, byte[][] data)
+        {
+            // Recovers data
+            string username = Encoding.UTF8.GetString(data[0]);
+            string columnImg = Encoding.UTF8.GetString(data[1]);
+            string idImage = Encoding.UTF8.GetString(data[2]);
+            // Update the id of the image
+            bool result = RequestsSQL.UpdateIdImageOfUser(username, columnImg, idImage);
+
+            // Convert the result of the update into a byte array and send it to the client
+            byte[] buffer = BitConverter.GetBytes(result);
+            handler.Send(buffer);
+        }
+
+        /// <summary>
+        /// Update the password of an user
+        /// </summary>
+        /// <param name="handler">The socket of the client who is trying to connect the database</param>
+        /// <param name="data">Jagged byte array of the Image</param>
+        public void CommandInsertImage(Socket handler, byte[][] data)
+        {
+            // Recovers data
+            Image img = (Image)ConvertByteArrayToObject(data[0]);
+
+            // Insert the image
+            string idImg = RequestsSQL.InsertImage(img, img.RawFormat);
+
+            // Convert the id of the image into a byte array and send it to the client
+            byte[] buffer = Encoding.UTF8.GetBytes(idImg);
+            handler.Send(buffer);
+        }
+
+        /// <summary>
+        /// Check if an user exist
+        /// </summary>
+        /// <param name="handler">The socket of the client</param>
+        /// <param name="data">Jagged byte array who contains the data</param>
+        public void CommandCheckIfUserExist(Socket handler, byte[][] data)
+        {
+            // Recovers data
+            string username = Encoding.UTF8.GetString(data[0]);
+
+            // Check the user
+            bool exist = RequestsSQL.CheckIfUserExist(username);
+
+            // Convert the result of the check into a byte array and send it to the client
+            byte[] buffer = BitConverter.GetBytes(exist);
+            handler.Send(buffer);
+        }
+
+        /// <summary>
+        /// Check if there already a friend request between two users
+        /// </summary>
+        /// <param name="handler">The socket of the client</param>
+        /// <param name="data">Jagged byte array who contains the data</param>
+        public void CommandCheckFriendRequest(Socket handler, byte[][] data)
+        {
+            // Recovers data
+            string idUserSender = Encoding.UTF8.GetString(data[0]);
+            string idUserReceiver = Encoding.UTF8.GetString(data[1]);
+
+            // Check the friend request
+            bool exist = RequestsSQL.CheckIfFriendRequestAlreadyExist(idUserSender, idUserReceiver);
+
+            // Convert the result of the check into a byte array and send it to the client
+            byte[] buffer = BitConverter.GetBytes(exist);
+            handler.Send(buffer);
+        }
+
+        /// <summary>
+        /// Check if there already a friend request between two users (by their id)
+        /// </summary>
+        /// <param name="handler">The socket of the client</param>
+        /// <param name="data">Jagged byte array who contains the data</param>
+        public void CommandCheckDuplicateFriendRequest(Socket handler, byte[][] data)
+        {
+            // Recovers data
+            string userSender = Encoding.UTF8.GetString(data[0]);
+            string userReceiver = Encoding.UTF8.GetString(data[1]);
+
+            // Check the friend request
+            bool check = RequestsSQL.CheckDuplicateFriendRequest(userSender, userReceiver);
+
+            // Convert the result of the check into a byte array and send it to the client
+            byte[] buffer = BitConverter.GetBytes(check);
+            handler.Send(buffer);
+        }
+
+        /// <summary>
+        /// Create a friend request
+        /// </summary>
+        /// <param name="handler">The socket of the client</param>
+        /// <param name="data">Jagged byte array who contains the data</param>
+        public void CommandCreateFriendRequest(Socket handler, byte[][] data)
+        {
+            // Recovers data
+            string idUserSender = Encoding.UTF8.GetString(data[0]);
+            string idUserReceiver = Encoding.UTF8.GetString(data[1]);
+            string messageRequest = Encoding.UTF8.GetString(data[2]);
+
+            // Create the friend request
+            bool created = RequestsSQL.CreateFriendRequest(idUserSender, idUserReceiver, messageRequest);
+
+            // Convert the result of the creation into a byte array and send it to the client
+            byte[] buffer = BitConverter.GetBytes(created);
+            handler.Send(buffer);
         }
     }
 }

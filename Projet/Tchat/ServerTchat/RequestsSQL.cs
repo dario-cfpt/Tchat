@@ -2,7 +2,7 @@
  * Description : Chat online in Windows Form C#. Users can chat privately or they can chat in groups in "rooms"
  * Class : RequestsSql - Contains all queries SQL of the app
  * Author : GENGA Dario
- * Last update : 2017.12.14 (yyyy-MM-dd)
+ * Last update : 2017.12.17 (yyyy-MM-dd)
  */
 
 // TODO : faire des commentaires en anglais dans ce fichier
@@ -12,8 +12,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace ServerTchat
 {
@@ -23,7 +21,7 @@ namespace ServerTchat
     public class RequestsSQL
     {
         private MySqlConnection _connection;
-        // TODO : faire des enum ici
+        
         // Les différents statuts de connection accepté dans la base :
         public const string ONLINE = "En ligne";
         public const string ABSENT = "Absent";
@@ -41,32 +39,6 @@ namespace ServerTchat
             Connection = connection;
         }
         public MySqlConnection Connection { get => _connection; set => _connection = value; }
-
-        /// <summary>
-        /// Encrypte le texte reçu en une chaîne SHA256
-        /// </summary>
-        /// <param name="text">Le texte à encrypté</param>
-        /// <returns>Le texte encrypté en SHA256</returns>
-        private string GetHashSha256(string text)
-        {
-            string hashString = ""; // chaîne qui stockera le text encrypter en SHA256
-
-            // Encode le texte en UTF8 et récupères les bytes de chaques caractères dans un tableau
-            byte[] bytes = Encoding.UTF8.GetBytes(text);
-
-            // Hash notre tableau de byte et stocke le tout dans un nouveau tableau
-            SHA256Managed sha256Managed = new SHA256Managed();
-            byte[] hash = sha256Managed.ComputeHash(bytes);
-
-
-            // Parcour notre tableau hasher et ajoute chaque byte dans notre chaîne
-            foreach (byte b in hash)
-            {
-                hashString += String.Format("{0:x2}", b); // b est formater en hexadécimal
-            }
-
-            return hashString;
-        }
 
         /// <summary>
         /// Convertie une image en tableau de byte
@@ -318,9 +290,6 @@ namespace ServerTchat
                 Console.WriteLine("Le nom d'utilisateur ou le mot de passe ne peut être null !");
                 return false;
             }
-
-            // Encrypte le mot de passe en SHA256
-            password = GetHashSha256(password);
 
             MySqlCommand command = Connection.CreateCommand();
             command.CommandText = "SELECT * FROM mytchatroomdb.users WHERE username = @username AND pssw = @password";
@@ -714,9 +683,6 @@ namespace ServerTchat
                 return false; // Annule la création si c'est le cas
             }
 
-            // Encrypte le mot de passe en SHA256
-            password = GetHashSha256(password);
-
             MySqlCommand command = Connection.CreateCommand();
 
             command.CommandText = "INSERT INTO users (`USERNAME`, `PSSW`,`EMAIL`, `PHONE`, `AVATAR_ID`) VALUES(@username, @password, @email, @phone, 1)";
@@ -828,8 +794,8 @@ namespace ServerTchat
         /// <summary>
         /// Modifie le mot de passe de l'utilisateur
         /// </summary>
-        /// <param name="username"></param>
-        /// <param name="password"></param>
+        /// <param name="username">The name of the user</param>
+        /// <param name="password">The (encrypted) password of the user</param>
         /// <returns>Retourne true si le mot de passe a correctement été modifié, sinon retourne false en cas d'erreur</returns>
         public bool UpdatePasswordUser(string username, string password)
         {
@@ -839,10 +805,7 @@ namespace ServerTchat
                 Console.WriteLine("Le nom d'utilisateur ne peut être null !");
                 return false;
             }
-
-            // Encrypte le mot de passe en SHA256
-            password = GetHashSha256(password);
-
+           
             MySqlCommand command = Connection.CreateCommand();
             command.CommandText = "UPDATE mytchatroomdb.users SET PSSW = @password WHERE USERNAME = @username";
             command.Parameters.AddWithValue("@username", username);
@@ -853,7 +816,7 @@ namespace ServerTchat
                 Console.WriteLine(command.CommandText);
                 command.ExecuteNonQuery();
                 Console.WriteLine("Le mot de passe de l'utilisateur \"" + username + "\" a correctement été modifié");
-                return true; // La mot de passe a correctement fonctionné
+                return true;
             }
             catch (Exception ex)
             {
